@@ -17,17 +17,13 @@ const props = defineProps({
   isBackgroundInstallation: {
     type: Boolean,
     default: false
-  },
-  progress: {
-    type: Number,
-    default: 0
-  },
-  logs: {
-    type: Array,
-    default: () => []
   }
 })
-
+if (window.electronAPI && window.electronAPI.onInstallProgress) {
+  window.electronAPI.onInstallProgress((data) => {
+    console.log(data)
+  })
+}
 const emit = defineEmits(['close', 'abort', 'background'])
 
 // 处理关闭模态框

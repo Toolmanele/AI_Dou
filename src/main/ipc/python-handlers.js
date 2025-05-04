@@ -40,7 +40,7 @@ function setupPythonHandlers() {
           // 同时在控制台记录
           consoleProgressCallback(update)
           // 发送到渲染进程
-          event.sender.send('python-install-progress', update)
+          event.sender.send('install-progress', update)
         }
 
         // 首先发送AppSpace路径信息

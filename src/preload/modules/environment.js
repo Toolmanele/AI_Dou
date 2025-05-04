@@ -17,5 +17,9 @@ export default {
 
   // 监听 GitHub 安装进度
   onGithubInstallProgress: (callback) =>
-    ipcRenderer.on('github-install-progress', (_event, data) => callback(data))
+    ipcRenderer.on('github-install-progress', (_event, data) => callback(data)),
+
+  // 监听安装进度
+  onInstallProgress: (callback) =>
+    ipcRenderer.on('install-progress', (_event, data) => callback(data))
 }

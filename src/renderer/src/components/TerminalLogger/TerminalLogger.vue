@@ -192,11 +192,11 @@ onUnmounted(() => {
 <template>
   <div class="terminal">
     <div v-if="showHeader" class="terminal-header">
-      <div class="terminal-dots">
+      <!-- <div class="terminal-dots">
         <span></span>
         <span></span>
         <span></span>
-      </div>
+      </div> -->
       <div class="terminal-title">{{ title }}</div>
     </div>
 
@@ -245,7 +245,7 @@ onUnmounted(() => {
   border: 1px solid #333;
   border-radius: 6px;
   overflow: hidden;
-  font-family: 'Courier New', monospace;
+  font-family: Consolas, 'Courier New', monospace;
   background-color: #1e1e1e;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -292,7 +292,7 @@ onUnmounted(() => {
   overflow-y: auto;
   color: #f8f8f8;
   background-color: #1e1e1e;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 50%, transparent 50%);
+  /* background-image: linear-gradient(rgba(255, 255, 255, 0.03) 50%, transparent 50%); */
   background-size: 100% 4px;
   font-size: 14px;
 

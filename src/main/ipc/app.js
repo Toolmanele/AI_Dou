@@ -9,10 +9,7 @@ function setupAppsHandlers() {
     const isExist = await checkAppName(appName)
     return isExist
   })
-  ipcMain.handle('create-app', async (event, app) => {
-    const result = await createApp(app)
-    return result
-  })
+  ipcMain.handle('create-app', createApp)
 }
 
 export default setupAppsHandlers
