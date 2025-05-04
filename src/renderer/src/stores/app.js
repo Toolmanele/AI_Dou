@@ -194,6 +194,10 @@ export const useAppStore = defineStore('app', () => {
     return systemInfo.value
   }
 
+  async function getAppsData() {
+    const apps = await window.electronAPI.getAppsData()
+    return apps
+  }
   return {
     // 状态
     appName,
@@ -208,6 +212,7 @@ export const useAppStore = defineStore('app', () => {
     // 动作
     toggleDarkMode,
     getVersionInfo,
-    getSystemInfo
+    getSystemInfo,
+    getAppsData
   }
 })

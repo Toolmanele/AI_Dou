@@ -1,94 +1,62 @@
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
-import SearchBar from "../components/appPage/SearchBar.vue";
-import TagSelector from "../components/appPage/TagSelector.vue";
-import AppList from "../components/appPage/AppList.vue";
-import ConfigModal from "../components/appPage/AppCreateModal.vue";
-import electronStore from "../services/electronStore";
-import { useAppCreateStore } from "../stores/appCreateStore";
+import { ref, computed, onMounted, watch } from 'vue'
+import SearchBar from '../components/appPage/SearchBar.vue'
+import TagSelector from '../components/appPage/TagSelector.vue'
+import AppList from '../components/appPage/AppList.vue'
+import ConfigModal from '../components/appPage/AppCreateModal.vue'
+import electronStore from '../services/electronStore'
+import { useAppCreateStore } from '../stores/appCreateStore'
+import { useAppStore } from '../stores/app'
 // Apps data - will be loaded from storage
-const apps = ref([]);
-const isLoading = ref(true);
-const isElectronAvailable = ref(!!window.electronAPI);
-const isSaving = ref(false);
-const appCreateStore = useAppCreateStore();
-// Sample template app for development
-const sampleApp = {
-  id: 1,
-  name: "Document Writer Pro",
-  tags: ["Productivity", "Work", "Document", "Office"],
-  description:
-    "Advanced document creation and editing tool with collaboration features",
-  createdAt: "2023-01-01",
-  lastUsedAt: "2023-04-10",
-  icon: "📝",
-  filePath: "/path/to/doc-writer",
-  status: "completed",
-  setupProgress: 100,
-};
+const apps = ref([])
+const isLoading = ref(true)
+const isElectronAvailable = ref(!!window.electronAPI)
+const isSaving = ref(false)
+const appCreateStore = useAppCreateStore()
 
 // Tag filtering - dynamically generated from apps data
-const availableTags = ref(["All"]);
-const selectedTags = ref(["All"]);
+const availableTags = ref(['All'])
+const selectedTags = ref(['All'])
 
 // Generate unique tags from apps
 function generateAvailableTags() {
   // Start with 'All' tag
-  const tags = new Set(["All"]);
+  const tags = new Set(['All'])
 
   // Extract all tags from all apps
   apps.value.forEach((app) => {
     if (Array.isArray(app.tags)) {
-      app.tags.forEach((tag) => tags.add(tag));
+      app.tags.forEach((tag) => tags.add(tag))
     }
-  });
+  })
 
   // Convert Set to array and sort alphabetically
   availableTags.value = Array.from(tags).sort((a, b) => {
     // Keep 'All' at the beginning
-    if (a === "All") return -1;
-    if (b === "All") return 1;
-    return a.localeCompare(b);
-  });
+    if (a === 'All') return -1
+    if (b === 'All') return 1
+    return a.localeCompare(b)
+  })
 }
 
 // Update tags whenever apps are loaded or modified
-watch(apps, generateAvailableTags, { deep: true });
+watch(apps, generateAvailableTags, { deep: true })
 
 // Load apps from storage
 async function loadApps() {
   try {
     // Initialize the data storage first
-    await electronStore.initializeStorage();
+    await electronStore.initializeStorage()
 
     // Get apps from storage
-    const storedApps = await electronStore.getApps();
-
-    // // Check if we got any apps back
-    // if (Array.isArray(storedApps) && storedApps.length > 0) {
-    //   apps.value = storedApps;
-    // } else if (electronStore.isDevelopmentMode) {
-    //   // If in dev mode and no apps, create sample data
-    //   console.log('Development mode: Creating sample app data');
-    //   // Create sample apps for development
-    //   const sampleApps = Array(15).fill(0).map((_, index) => ({
-    //     ...JSON.parse(JSON.stringify(sampleApp)),
-    //     id: index + 1,
-    //     name: `Sample App ${index + 1}`,
-    //     createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
-    //     lastUsedAt: new Date(Date.now() - Math.random() * 1000000000).toISOString().split('T')[0],
-    //   }));
-    //   apps.value = sampleApps;
-    //   // Save sample apps to storage
-    //   await electronStore.saveApps(sampleApps);
-    // }
-    apps.value = storedApps;
-    console.log("apps", apps.value);
+    const storedApps = await electronStore.getApps()
+    apps.value = storedApps
+    console.log('apps', apps.value)
     // Generate available tags from loaded apps
-    generateAvailableTags();
+    generateAvailableTags()
   } catch (error) {
-    console.error("Error loading apps:", error);
-    throw error; // rethrow to allow the caller to handle it
+    console.error('Error loading apps:', error)
+    throw error // rethrow to allow the caller to handle it
   }
 }
 
@@ -96,64 +64,49 @@ async function loadApps() {
 onMounted(async () => {
   try {
     // Initialize data storage & load apps
-    isLoading.value = true;
+    isLoading.value = true
 
     // Try to load apps - this will fall back to memory storage if Electron APIs aren't available
-    await loadApps();
+    await loadApps()
   } catch (error) {
-    console.error("Error initializing app data:", error);
+    console.error('Error initializing app data:', error)
 
     // Fallback to sample data if there was an error
     if (apps.value.length === 0) {
-      console.log("Using sample data as fallback");
-      // Create 5 sample apps for fallback
-      const sampleApps = Array(5)
-        .fill(0)
-        .map((_, index) => ({
-          ...JSON.parse(JSON.stringify(sampleApp)),
-          id: index + 1,
-          name: `Sample App ${index + 1}`,
-          createdAt: new Date(Date.now() - Math.random() * 10000000000)
-            .toISOString()
-            .split("T")[0],
-          lastUsedAt: new Date(Date.now() - Math.random() * 1000000000)
-            .toISOString()
-            .split("T")[0],
-        }));
-      apps.value = sampleApps;
+      console.log('Using sample data as fallback')
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-});
+})
 
 // Search functionality
-const searchQuery = ref("");
+const searchQuery = ref('')
 
 // Compute tag counts for the apps
 const tagCounts = computed(() => {
-  const counts = {};
+  const counts = {}
 
   // Initialize all available tags with count 0
   availableTags.value.forEach((tag) => {
-    if (tag !== "All") {
-      counts[tag] = 0;
+    if (tag !== 'All') {
+      counts[tag] = 0
     }
-  });
+  })
 
   // Count apps for each tag
   apps.value.forEach((app) => {
     if (Array.isArray(app.tags)) {
       app.tags.forEach((tag) => {
         if (counts[tag] !== undefined) {
-          counts[tag]++;
+          counts[tag]++
         }
-      });
+      })
     }
-  });
+  })
 
-  return counts;
-});
+  return counts
+})
 
 // Compute filtered apps for count display
 const filteredApps = computed(() => {
@@ -162,228 +115,221 @@ const filteredApps = computed(() => {
     (app) =>
       app.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       app.description.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+  )
 
   // Then filter by tags
-  if (!selectedTags.value.includes("All")) {
-    if (filterMode.value === "any") {
+  if (!selectedTags.value.includes('All')) {
+    if (filterMode.value === 'any') {
       // Show apps that have ANY of the selected tags (OR logic)
-      result = result.filter((app) =>
-        app.tags.some((tag) => selectedTags.value.includes(tag))
-      );
+      result = result.filter((app) => app.tags.some((tag) => selectedTags.value.includes(tag)))
     } else {
       // Show apps that have ALL of the selected tags (AND logic)
-      result = result.filter((app) =>
-        selectedTags.value.every((tag) => app.tags.includes(tag))
-      );
+      result = result.filter((app) => selectedTags.value.every((tag) => app.tags.includes(tag)))
     }
   }
 
-  return result;
-});
+  return result
+})
 
 // Filtering mode - 'all' (AND logic) or 'any' (OR logic)
-const filterMode = ref("all");
+const filterMode = ref('all')
 
 // Sorting
-const sortBy = ref("name");
-const sortDirection = ref("asc");
+const sortBy = ref('name')
+const sortDirection = ref('asc')
 
 // Tag selection functions
 const toggleTag = (tag) => {
   // Special handling for 'All' tag
-  if (tag === "All") {
-    selectedTags.value = ["All"];
-    return;
+  if (tag === 'All') {
+    selectedTags.value = ['All']
+    return
   }
 
   // If 'All' is currently selected and user selects another tag,
   // remove 'All' and add the new tag
-  if (selectedTags.value.includes("All")) {
-    selectedTags.value = [tag];
-    return;
+  if (selectedTags.value.includes('All')) {
+    selectedTags.value = [tag]
+    return
   }
 
   // Toggle tag - if already selected, remove it
   if (selectedTags.value.includes(tag)) {
-    selectedTags.value = selectedTags.value.filter((t) => t !== tag);
+    selectedTags.value = selectedTags.value.filter((t) => t !== tag)
     // If all tags are deselected, select 'All' again
     if (selectedTags.value.length === 0) {
-      selectedTags.value = ["All"];
+      selectedTags.value = ['All']
     }
   } else {
     // Add tag to selected tags
-    selectedTags.value.push(tag);
+    selectedTags.value.push(tag)
   }
-};
+}
 
 // Toggle filter mode
 const toggleFilterMode = () => {
-  filterMode.value = filterMode.value === "any" ? "all" : "any";
-};
+  filterMode.value = filterMode.value === 'any' ? 'all' : 'any'
+}
 
 // Reset all filters
 const resetFilters = () => {
-  searchQuery.value = "";
-  selectedTags.value = ["All"];
-  filterMode.value = "all";
-};
+  searchQuery.value = ''
+  selectedTags.value = ['All']
+  filterMode.value = 'all'
+}
 
 // Add tag to filter from app card
 const addTagToFilter = (tag, event) => {
-  event.stopPropagation(); // Prevent card expansion
+  event.stopPropagation() // Prevent card expansion
 
   // If 'All' is currently selected, replace it with the clicked tag
-  if (selectedTags.value.includes("All")) {
-    selectedTags.value = [tag];
-    return;
+  if (selectedTags.value.includes('All')) {
+    selectedTags.value = [tag]
+    return
   }
 
   // If tag is not already selected, add it to the filter
   if (!selectedTags.value.includes(tag)) {
-    selectedTags.value.push(tag);
+    selectedTags.value.push(tag)
   }
-};
+}
 
 // Sort options and functions
 const sortOptions = [
-  { value: "name", label: "Name" },
-  { value: "createdAt", label: "Creation Date" },
-  { value: "lastUsedAt", label: "Last Used" },
-];
+  { value: 'name', label: 'Name' },
+  { value: 'createdAt', label: 'Creation Date' },
+  { value: 'lastUsedAt', label: 'Last Used' }
+]
 
 const toggleSortDirection = () => {
-  sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-};
+  sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+}
 
 const getSortLabel = (option) => {
   if (sortBy.value === option.value) {
-    return `${option.label} ${sortDirection.value === "asc" ? "↑" : "↓"}`;
+    return `${option.label} ${sortDirection.value === 'asc' ? '↑' : '↓'}`
   }
-  return option.label;
-};
+  return option.label
+}
 
 // New function to handle both selecting sort option and toggling direction
 const handleSortClick = (option) => {
   // If clicking the same option that's already selected, toggle direction
   if (sortBy.value === option.value) {
-    toggleSortDirection();
+    toggleSortDirection()
   } else {
     // If selecting a new option, set it as active and reset direction to ascending
-    sortBy.value = option.value;
-    sortDirection.value = "asc";
+    sortBy.value = option.value
+    sortDirection.value = 'asc'
   }
-};
+}
 
 // Configuration modal
-const showConfigModal = ref(false);
-const currentAppConfig = ref(null);
-const configModalPosition = ref({ top: 0, left: 0, width: 0, height: 0 });
+const showConfigModal = ref(false)
+const currentAppConfig = ref(null)
+const configModalPosition = ref({ top: 0, left: 0, width: 0, height: 0 })
 
 // Function to open config modal
 const openConfigModal = (app, event) => {
   // Store the current app to be configured
-  currentAppConfig.value = { ...app };
+  currentAppConfig.value = { ...app }
 
   // Get the position of the clicked card for the animation
-  const card = event.currentTarget.closest(".app-card");
-  const rect = card.getBoundingClientRect();
+  const card = event.currentTarget.closest('.app-card')
+  const rect = card.getBoundingClientRect()
 
   configModalPosition.value = {
     top: rect.top,
     left: rect.left,
     width: rect.width,
-    height: rect.height,
-  };
+    height: rect.height
+  }
 
   // Show the modal
-  showConfigModal.value = true;
+  showConfigModal.value = true
 
   // Prevent body scrolling when modal is open
-  document.body.style.overflow = "hidden";
-};
+  document.body.style.overflow = 'hidden'
+}
 
 // Function to close config modal
 const closeConfigModal = () => {
-  showConfigModal.value = false;
-  document.body.style.overflow = "";
-};
+  showConfigModal.value = false
+  document.body.style.overflow = ''
+}
 
 // Function to save app configuration
 const saveAppConfig = async (updatedApp) => {
   try {
     // Set saving state
-    isSaving.value = true;
+    isSaving.value = true
 
     // Create a clean, serializable copy of the app object
     // This removes any Vue reactivity or circular references
-    const cleanApp = JSON.parse(JSON.stringify(updatedApp));
+    const cleanApp = JSON.parse(JSON.stringify(updatedApp))
 
     // Check if this is a new app (doesn't exist in the apps array)
-    const index = apps.value.findIndex((app) => app.id === cleanApp.id);
+    const index = apps.value.findIndex((app) => app.id === cleanApp.id)
 
     if (index === -1) {
       // This is a new app, add it to the array
-      apps.value.push(cleanApp);
+      apps.value.push(cleanApp)
       // Add the app to storage
-      await electronStore.addApp(cleanApp);
+      await electronStore.addApp(cleanApp)
     } else {
       // This is an existing app, update it
-      apps.value[index] = cleanApp;
+      apps.value[index] = cleanApp
       // Update the app in storage
-      await electronStore.updateApp(cleanApp);
+      await electronStore.updateApp(cleanApp)
     }
   } catch (error) {
-    console.error("Error saving app:", error);
-    alert("Failed to save the app. Please try again.");
+    console.error('Error saving app:', error)
+    alert('Failed to save the app. Please try again.')
   } finally {
-    isSaving.value = false;
-    closeConfigModal();
+    isSaving.value = false
+    closeConfigModal()
   }
-};
+}
 
 // Function to simulate opening an app
 const openApp = (app, event) => {
   // In a real application, this would launch or navigate to the app
-  alert(`Opening ${app.name}...`);
-};
+  alert(`Opening ${app.name}...`)
+}
 
 // Functions for app actions
 const deleteApp = async (app, event) => {
   if (confirm(`Are you sure you want to delete ${app.name}?`)) {
     try {
       // Get the app ID as a simple value
-      const appId = app.id;
+      const appId = app.id
 
       // Remove from local array
-      apps.value = apps.value.filter((a) => a.id !== appId);
+      apps.value = apps.value.filter((a) => a.id !== appId)
       // Remove from storage
-      await electronStore.deleteApp(appId);
+      await electronStore.deleteApp(appId)
     } catch (error) {
-      console.error("Error deleting app:", error);
-      alert("Failed to delete the app. Please try again.");
+      console.error('Error deleting app:', error)
+      alert('Failed to delete the app. Please try again.')
     }
   }
-};
+}
 
 const cloneApp = async (app, event) => {
   try {
     // Create a clean, serializable copy
-    const sourceCopy = JSON.parse(JSON.stringify(app));
+    const sourceCopy = JSON.parse(JSON.stringify(app))
 
     // Validate tags to make sure they are valid
-    let validTags = Array.isArray(sourceCopy.tags) ? sourceCopy.tags : [];
+    let validTags = Array.isArray(sourceCopy.tags) ? sourceCopy.tags : []
     // Make sure there is at least one tag
     if (validTags.length === 0) {
       // Default tag based on available tags
-      let defaultTag = "Productivity";
-      if (
-        !availableTags.value.includes(defaultTag) &&
-        availableTags.value.length > 1
-      ) {
-        defaultTag = availableTags.value[1]; // First tag after 'All'
+      let defaultTag = 'Productivity'
+      if (!availableTags.value.includes(defaultTag) && availableTags.value.length > 1) {
+        defaultTag = availableTags.value[1] // First tag after 'All'
       }
-      validTags = [defaultTag];
+      validTags = [defaultTag]
     }
 
     // Create a cloned app with a new ID
@@ -391,23 +337,23 @@ const cloneApp = async (app, event) => {
       ...sourceCopy,
       id: Date.now(), // Simple way to generate a unique ID
       name: `${sourceCopy.name} (Clone)`,
-      createdAt: new Date().toISOString().split("T")[0],
-      tags: validTags,
-    };
+      createdAt: new Date().toISOString().split('T')[0],
+      tags: validTags
+    }
 
     // Add to local array
-    apps.value.push(newApp);
+    apps.value.push(newApp)
     // Add to storage
-    await electronStore.addApp(newApp);
+    await electronStore.addApp(newApp)
   } catch (error) {
-    console.error("Error cloning app:", error);
-    alert("Failed to clone the app. Please try again.");
+    console.error('Error cloning app:', error)
+    alert('Failed to clone the app. Please try again.')
   }
-};
+}
 
 // New function to handle creating a new app
 const openCreateAppModal = () => {
-  console.log("openCreateAppModal");
+  console.log('openCreateAppModal')
   // Default tag based on available tags (use Productivity if exists, else first non-All tag)
   // let defaultTag = "Productivity";
   // if (
@@ -430,119 +376,114 @@ const openCreateAppModal = () => {
   //   status: "setup",
   //   setupProgress: 25,
   // };
-  appCreateStore.resetForm();
+  appCreateStore.resetForm()
   // Set the modal position to center of viewport
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
 
   configModalPosition.value = {
     top: viewportHeight / 2 - 300,
     left: viewportWidth / 2 - 400,
     width: 800,
-    height: 600,
-  };
+    height: 600
+  }
 
   // Show the modal
-  showConfigModal.value = true;
+  showConfigModal.value = true
 
   // Prevent body scrolling when modal is open
-  document.body.style.overflow = "hidden";
-};
+  document.body.style.overflow = 'hidden'
+}
 
 // 处理应用创建事件
 const handleAppCreated = async (newApp) => {
   try {
-    console.log("Handling app creation:", newApp);
-    apps.value.push(newApp);
-    await electronStore.addApp(newApp);
+    console.log('Handling app creation:', newApp)
+    apps.value.push(newApp)
+    await electronStore.addApp(newApp)
     // 创建应用 - 使用JSON序列化来创建一个纯数据对象，移除可能的响应式包装和不可序列化的属性
-    const serializedApp = JSON.parse(JSON.stringify(newApp));
-    window.electronAPI
-      .createApp(serializedApp)
-      .then(async (result) => {
-        console.log("createApp result", result);
-        if (result.success) {
-          // 查找应用在数组中的索引
-          const appIndex = apps.value.findIndex((app) => app.id === newApp.id);
-          console.log(appIndex);
-          if (appIndex !== -1) {
-            // 更新Python环境信息 - 保留原有数据结构并更新必要参数
-            const existingApp = apps.value[appIndex];
-            const updatedPythonEnvironments =
-              existingApp.pythonEnvironments || [];
+    const serializedApp = JSON.parse(JSON.stringify(newApp))
+    // window.electronAPI
+    //   .createApp(serializedApp)
+    //   .then(async (result) => {
+    //     console.log('createApp result', result)
+    //     if (result.success) {
+    //       // 查找应用在数组中的索引
+    //       const appIndex = apps.value.findIndex((app) => app.id === newApp.id)
+    //       console.log(appIndex)
+    //       if (appIndex !== -1) {
+    //         // 更新Python环境信息 - 保留原有数据结构并更新必要参数
+    //         const existingApp = apps.value[appIndex]
+    //         const updatedPythonEnvironments = existingApp.pythonEnvironments || []
 
-            // 将result中的Python环境信息合并到现有环境中
-            if (
-              result.pythonEnvironments &&
-              result.pythonEnvironments.length > 0
-            ) {
-              result.pythonEnvironments.forEach((resultEnv) => {
-                // 查找对应版本的环境
-                const existingEnvIndex = updatedPythonEnvironments.findIndex(
-                  (env) => env.pythonVersion === resultEnv.pythonVersion
-                );
+    //         // 将result中的Python环境信息合并到现有环境中
+    //         if (result.pythonEnvironments && result.pythonEnvironments.length > 0) {
+    //           result.pythonEnvironments.forEach((resultEnv) => {
+    //             // 查找对应版本的环境
+    //             const existingEnvIndex = updatedPythonEnvironments.findIndex(
+    //               (env) => env.pythonVersion === resultEnv.pythonVersion
+    //             )
 
-                if (existingEnvIndex !== -1) {
-                  // 更新现有环境
-                  updatedPythonEnvironments[existingEnvIndex] = {
-                    ...updatedPythonEnvironments[existingEnvIndex],
-                    isInstalled: resultEnv.isInstalled,
-                    pythonPath:
-                      resultEnv.pythonPath ||
-                      updatedPythonEnvironments[existingEnvIndex].pythonPath,
-                  };
-                } else {
-                  // 添加新环境
-                  updatedPythonEnvironments.push(resultEnv);
-                }
-              });
-            }
+    //             if (existingEnvIndex !== -1) {
+    //               // 更新现有环境
+    //               updatedPythonEnvironments[existingEnvIndex] = {
+    //                 ...updatedPythonEnvironments[existingEnvIndex],
+    //                 isInstalled: resultEnv.isInstalled,
+    //                 pythonPath:
+    //                   resultEnv.pythonPath || updatedPythonEnvironments[existingEnvIndex].pythonPath
+    //               }
+    //             } else {
+    //               // 添加新环境
+    //               updatedPythonEnvironments.push(resultEnv)
+    //             }
+    //           })
+    //         }
 
-            // 更新应用信息 - 直接在原位置更新
-            apps.value[appIndex] = {
-              ...existingApp,
-              pythonEnvironments: updatedPythonEnvironments,
-              folderPath: result.appPath || existingApp.folderPath,
-            };
+    //         // 更新应用信息 - 直接在原位置更新
+    //         apps.value[appIndex] = {
+    //           ...existingApp,
+    //           pythonEnvironments: updatedPythonEnvironments,
+    //           folderPath: result.appPath || existingApp.folderPath
+    //         }
 
-            // 更新存储
-            await electronStore.updateApp(apps.value[appIndex]);
-          } else {
-            // 如果应用不在列表中（新创建的应用），则添加到列表
-            const appToAdd = {
-              ...newApp,
-              pythonEnvironments: result.pythonEnvironments || [],
-              folderPath: result.appPath || newApp.folderPath,
-            };
+    //         // 更新存储
+    //         await electronStore.updateApp(apps.value[appIndex])
+    //       } else {
+    //         // 如果应用不在列表中（新创建的应用），则添加到列表
+    //         const appToAdd = {
+    //           ...newApp,
+    //           pythonEnvironments: result.pythonEnvironments || [],
+    //           folderPath: result.appPath || newApp.folderPath
+    //         }
 
-            console.log("Adding new app to list:", appToAdd);
+    //         console.log('Adding new app to list:', appToAdd)
 
-            // 添加到应用列表
-            apps.value.push(appToAdd);
+    //         // 添加到应用列表
+    //         apps.value.push(appToAdd)
 
-            // 添加到存储
-            await electronStore.addApp(appToAdd);
-          }
+    //         // 添加到存储
+    //         await electronStore.addApp(appToAdd)
+    //       }
 
-          // 重新生成标签
-          generateAvailableTags();
-        } else {
-          console.error("App creation failed:", result.error);
-          alert(`应用创建失败: ${result.error || "未知错误"}`);
-        }
-      })
-      .catch((error) => {
-        console.error("Error in createApp:", error);
-        alert(`创建应用时发生错误: ${error.message}`);
-      });
+    //       // 重新生成标签
+    //       generateAvailableTags()
+    //     } else {
+    //       console.error('App creation failed:', result.error)
+    //       alert(`应用创建失败: ${result.error || '未知错误'}`)
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.error('Error in createApp:', error)
+    //     alert(`创建应用时发生错误: ${error.message}`)
+    //   })
 
     // 关闭模态窗口
-    closeConfigModal();
+    // closeConfigModal();
   } catch (error) {
-    console.error("Error handling app creation:", error);
-    alert("应用创建出错，请重试");
+    console.error('Error handling app creation:', error)
+    alert('应用创建出错，请重试')
   }
-};
+}
 </script>
 
 <template>
@@ -571,7 +512,7 @@ const handleAppCreated = async (newApp) => {
           <!-- Results count summary -->
           <div class="results-count">
             <strong>{{ filteredApps.length }}</strong>
-            {{ filteredApps.length === 1 ? "app" : "apps" }} found
+            {{ filteredApps.length === 1 ? 'app' : 'apps' }} found
 
             <span v-if="searchQuery" class="filter-pill">
               "{{ searchQuery }}"
@@ -581,11 +522,7 @@ const handleAppCreated = async (newApp) => {
 
           <!-- Add Create App Button -->
           <div class="create-app-button">
-            <button
-              @click="openCreateAppModal"
-              class="add-app-btn"
-              :disabled="isSaving"
-            >
+            <button @click="openCreateAppModal" class="add-app-btn" :disabled="isSaving">
               <span v-if="isSaving" class="loading-dot-container">
                 <span class="loading-dot"></span>
                 <span class="loading-dot"></span>
@@ -601,10 +538,7 @@ const handleAppCreated = async (newApp) => {
               <button
                 v-for="option in sortOptions"
                 :key="option.value"
-                :class="[
-                  'sort-option-btn',
-                  { active: sortBy === option.value },
-                ]"
+                :class="['sort-option-btn', { active: sortBy === option.value }]"
                 @click="handleSortClick(option)"
                 :title="`Sort by ${option.label}`"
               >
@@ -623,8 +557,8 @@ const handleAppCreated = async (newApp) => {
         <!-- Warning for missing Electron APIs -->
         <div v-else-if="!isElectronAvailable" class="electron-warning">
           <p>
-            <strong>Note:</strong> Running in browser mode. Data will not be
-            persisted between sessions.
+            <strong>Note:</strong> Running in browser mode. Data will not be persisted between
+            sessions.
           </p>
         </div>
 
@@ -867,7 +801,9 @@ const handleAppCreated = async (newApp) => {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
