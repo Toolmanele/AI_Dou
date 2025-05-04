@@ -6,8 +6,8 @@ function getResourcePath(relativePath) {
   // 如果是开发环境
   if (is.dev) {
     // 从 /electron/utils/ 返回项目根目录，然后添加 relativePath
-    console.log('路径', path.resolve(__dirname, '../../../', relativePath))
-    return path.resolve(__dirname, '../../../', relativePath)
+    console.log('路径', path.resolve(__dirname, '../../', relativePath))
+    return path.resolve(__dirname, '../../', relativePath)
   }
 
   // 如果是打包环境

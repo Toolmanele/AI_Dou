@@ -1,5 +1,6 @@
 <script setup>
 import TerminalLogger from '../TerminalLogger/TerminalLogger.vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 
 const props = defineProps({
   isVisible: {
@@ -19,11 +20,71 @@ const props = defineProps({
     default: false
   }
 })
-if (window.electronAPI && window.electronAPI.onInstallProgress) {
-  window.electronAPI.onInstallProgress((data) => {
-    console.log(data)
-  })
+
+// 添加日志和进度的响应式状态
+const logs = ref([])
+const progress = ref(0)
+
+// 标记是否已设置监听器
+let isListenerSet = false
+
+// 当组件挂载时设置事件监听器
+onMounted(() => {
+  if (props.isVisible) {
+    setupProgressListener()
+  }
+})
+
+// 当组件卸载时移除事件监听器
+onUnmounted(() => {
+  removeProgressListener()
+})
+
+// 监听模态框可见性变化
+watch(
+  () => props.isVisible,
+  (isVisible) => {
+    if (isVisible) {
+      // 重置日志和进度
+      logs.value = []
+      progress.value = 0
+      // 重新设置监听器
+      setupProgressListener()
+    } else {
+      // 当模态框关闭时移除监听器
+      removeProgressListener()
+    }
+  }
+)
+
+// 设置安装进度监听器
+const setupProgressListener = () => {
+  if (window.electronAPI && window.electronAPI.onInstallProgress && !isListenerSet) {
+    // 设置监听器
+    window.electronAPI.onInstallProgress((data) => {
+      if (data.logs && Array.isArray(data.logs)) {
+        // 添加新日志
+        logs.value = [...logs.value, ...data.logs]
+      }
+
+      // 更新进度
+      if (data.progress !== undefined) {
+        progress.value = data.progress
+      }
+    })
+
+    isListenerSet = true
+  }
 }
+
+// 移除安装进度监听器
+const removeProgressListener = () => {
+  if (isListenerSet && window.electronAPI && window.electronAPI.removeInstallProgressListener) {
+    window.electronAPI.removeInstallProgressListener()
+    isListenerSet = false
+  }
+}
+
 const emit = defineEmits(['close', 'abort', 'background'])
 
 // 处理关闭模态框

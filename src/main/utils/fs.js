@@ -67,5 +67,13 @@ const ensureDir = async (dirPath) => {
     return false
   }
 }
-
-export { checkFileExists, readFile, writeFile, ensureDir }
+const checkUniqueDir = async (baseDirPath, dirName) => {
+  let dirExists = fs.existsSync(path.join(baseDirPath, dirName))
+  while (dirExists) {
+    const timestamp = Date.now().toString().slice(-6)
+    dirName = `${dirName}-${timestamp}`
+    dirExists = fs.existsSync(path.join(baseDirPath, dirName))
+  }
+  return path.join(baseDirPath, dirName)
+}
+export { checkFileExists, readFile, writeFile, ensureDir, checkUniqueDir }

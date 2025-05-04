@@ -342,8 +342,9 @@ const handleAppCreated = async (newApp) => {
     console.log('handleAppCreated 被调用:', newApp.name, '事件时间:', new Date().toISOString())
 
     // 使用 appStore 添加应用，统一数据管理
-    await appStore.addApp(newApp)
-    console.log('handleAppCreated 完成添加:', newApp.name)
+    appStore.addApp(newApp).then((result) => {
+      console.log('handleAppCreated 完成添加:', result)
+    })
 
     // 关闭配置模态窗口
     closeConfigModal()

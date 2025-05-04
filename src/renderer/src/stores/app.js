@@ -236,6 +236,11 @@ export const useAppStore = defineStore('app', () => {
       apps.value.push(cleanApp)
       console.log('appStore.addApp 添加后 apps 长度:', apps.value.length)
       // 添加到存储
+      if (window.electronAPI && window.electronAPI.createApp) {
+        let result = await window.electronAPI.createApp(cleanApp)
+        console.log('appStore.addApp 添加后 apps 长度:', apps.value.length)
+        return result
+      }
       // await electronStore.addApp(cleanApp)
       return cleanApp
     } catch (error) {

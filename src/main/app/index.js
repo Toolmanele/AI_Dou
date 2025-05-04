@@ -1,11 +1,13 @@
-import { getAppUserDataPath } from '../utils/check'
+import { getAppUserDataPath, getSettingsData } from '../utils/check'
 import path from 'path'
-import fs from 'fs/promises'
-import { ensureDir } from '../utils/fs'
+import fsp from 'fs/promises'
+import fs from 'fs'
+import { checkUniqueDir, ensureDir } from '../utils/fs'
 import { is } from '@electron-toolkit/utils'
 import { getAppSpaceFromSettings } from '../utils/config'
 import { findFastestUrl } from '../url/findFastestUrl'
-
+import git from '../utils/git'
+import { installPython, consoleProgressCallback } from '../install_pythons/install_python'
 let appsData = null
 let appDataPath = getAppUserDataPath()
 // 这里放置的是单个 app 的信息
@@ -71,16 +73,20 @@ export async function createApp(event, app) {
     const githubRepos = app.github?.repos || []
     if (githubRepos.length > 0) {
       // 确保repos目录存在
-      const reposDir = app.folderPath
+      const reposDir = await checkUniqueDir(path.join(appSpace, 'apps'), app.name)
+      // 这里传入的 app.folderPath 不是完整版的，需要拼接,只能是一个文件夹的名称
+      // const reposDir = path.join(appSpace, 'apps', app.folderPath)
       if (!fs.existsSync(reposDir)) {
         fs.mkdirSync(reposDir, { recursive: true })
       }
+      console.log('reposDir', reposDir)
       let fastestMirrorUrlResult = await findFastestUrl(githubRepos)
       console.log('fastestMirrorUrlResult', fastestMirrorUrlResult)
       let fastestMirrorUrl = fastestMirrorUrlResult.url
 
       const progressCallback = (update) => {
         // 发送到渲染进程
+        console.log('update', update)
         event.sender.send('install-progress', update)
       }
 
@@ -121,7 +127,7 @@ export async function createApp(event, app) {
       if (cloneResult.success) {
         result.github.installed = true
         result.github.repoPath = cloneResult.repoPath
-
+        console.log('cloneResult.repoPath', cloneResult.repoPath)
         progressCallback({
           status: 'info',
           message: `仓库下载成功: ${cloneResult.repoPath}`
@@ -163,14 +169,15 @@ export async function createApp(event, app) {
           continue
         }
 
-        // // 创建进度回调
-        // const progressCallback = (update) => {
-        //   // 发送到渲染进程
-        //   event.sender.send('install-progress', {
-        //     ...update,
-        //     pythonVersion: env.pythonVersion
-        //   })
-        // }
+        // 创建进度回调
+        const progressCallback = (update) => {
+          // 发送到渲染进程
+          console.log('update', update)
+          event.sender.send('install-progress', {
+            ...update,
+            pythonVersion: env.pythonVersion
+          })
+        }
 
         progressCallback({
           status: 'info',
@@ -224,9 +231,9 @@ export async function createApp(event, app) {
     const appName = app.name
     const appInfoPath = path.join(appDataPath, appName + '.json')
     if (is.dev) {
-      await fs.writeFile(appInfoPath, JSON.stringify(app, null, 2))
+      await fsp.writeFile(appInfoPath, JSON.stringify(app, null, 2))
     } else {
-      await fs.writeFile(appInfoPath, JSON.stringify(app))
+      await fsp.writeFile(appInfoPath, JSON.stringify(app))
     }
 
     return {
