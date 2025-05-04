@@ -8,6 +8,7 @@ import { getAppSpaceFromSettings } from '../utils/config'
 import { findFastestUrl } from '../url/findFastestUrl'
 import git from '../utils/git'
 import { installPython, consoleProgressCallback } from '../install_pythons/install_python'
+import { formatCommands, getFinalPipMirrorUrl, getFinalPytorchMirrorUrl } from '../utils/pippytorch'
 let appsData = null
 let appDataPath = getAppUserDataPath()
 // 这里放置的是单个 app 的信息
@@ -184,18 +185,31 @@ export async function createApp(event, app) {
           message: `开始安装Python ${env.pythonVersion}环境`
         })
 
-        // 处理pip和pytorch命令
+        // 处理pip和pytorch 镜像 和 命令
+        // let pipMirrorUrl = getFinalPipMirrorUrl(env.pip?.source)
+        // let pytorchMirrorUrl = getFinalPytorchMirrorUrl(env.pytorch?.source)
         let pipCommands = []
         let pytorchCommands = []
 
         if (env.pip?.installCommands) {
-          pipCommands = env.pip.installCommands
+          pipCommands = await formatCommands(env.pip.installCommands, 'pip', env.pip?.source)
         }
 
         if (env.pytorch?.installCommands) {
-          pytorchCommands = env.pytorch.installCommands
+          pytorchCommands = await formatCommands(
+            env.pytorch.installCommands,
+            'pytorch',
+            env.pytorch?.source
+          )
         }
-
+        progressCallback({
+          status: 'info',
+          message: `pipCommands: ${JSON.stringify(pipCommands)}`
+        })
+        progressCallback({
+          status: 'info',
+          message: `pytorchCommands: ${JSON.stringify(pytorchCommands)}`
+        })
         console.log('准备安装 python')
         // 安装Python环境
         const installResult = await installPython(
