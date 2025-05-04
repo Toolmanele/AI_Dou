@@ -18,6 +18,12 @@ export default {
   // 获取操作系统和GPU信息
   getGpuOsInfo: () => ipcRenderer.invoke('get-gpu-os-info'),
 
+  // 获取应用列表
+  getAppsData: () => ipcRenderer.invoke('get-apps-data'),
+
+  // 检查应用名称是否存在
+  checkAppName: (params) => ipcRenderer.invoke('check-app-name', params),
+
   // 创建应用
   createApp: (params) => ipcRenderer.invoke('create-app', params)
 }

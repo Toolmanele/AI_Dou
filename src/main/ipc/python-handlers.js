@@ -108,7 +108,7 @@ function setupPythonHandlers() {
 }
 
 function setupAppHandlers() {
-  ipcMain.handle('create-app', async (event, app) => {
+  ipcMain.handle('install-app', async (event, app) => {
     try {
       const result = {
         success: false,

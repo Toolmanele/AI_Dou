@@ -47,9 +47,9 @@ function setupFileHandlers() {
     return folderPath
   })
 
-  ipcMain.handle('get-apps-data', getAppsData)
+  // ipcMain.handle('get-apps-data', getAppsData)
 
-  ipcMain.handle('write-apps-data', saveAppsData)
+  // ipcMain.handle('write-apps-data', saveAppsData)
 
   ipcMain.handle('get-settings-data', getSettingsData)
 
