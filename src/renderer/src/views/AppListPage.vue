@@ -4,7 +4,8 @@ import SearchBar from '../components/appPage/SearchBar.vue'
 import TagSelector from '../components/appPage/TagSelector.vue'
 import AppList from '../components/appPage/AppList.vue'
 import ConfigModal from '../components/appPage/AppCreateModal.vue'
-import TerminalLogger from '../components/TerminalLogger/TerminalLogger.vue'
+import AppInstallationModal from '../components/appPage/AppInstallationModal.vue'
+import BackgroundInstallationIndicator from '../components/appPage/BackgroundInstallationIndicator.vue'
 import { useAppCreateStore } from '../stores/appCreateStore'
 import { useAppStore } from '../stores/app'
 
@@ -595,6 +596,14 @@ const showBackgroundInstallations = () => {
     }
   }
 }
+
+// 处理后台安装
+const handleBackgroundInstallation = () => {
+  // 设置后台安装标志
+  isBackgroundInstallation.value = true
+  // 关闭模态框但不停止安装
+  closeInstallationModal()
+}
 </script>
 
 <template>
@@ -615,18 +624,6 @@ const showBackgroundInstallations = () => {
           @toggle-filter-mode="toggleFilterMode"
           @reset-filters="resetFilters"
         />
-      </div>
-
-      <!-- 后台安装指示器 -->
-      <div
-        v-if="backgroundInstallations.length > 0"
-        class="background-installations-indicator"
-        @click="showBackgroundInstallations"
-      >
-        <div class="indicator-icon">
-          <span class="spinner"></span>
-        </div>
-        <div class="indicator-text">{{ backgroundInstallations.length }} 个应用正在后台安装</div>
       </div>
 
       <!-- Main Content Area for Apps -->
@@ -718,77 +715,24 @@ const showBackgroundInstallations = () => {
       </transition>
     </Teleport>
 
-    <!-- Installation Modal -->
-    <Teleport to="body">
-      <transition name="modal-fade">
-        <div
-          v-if="showInstallationModal"
-          class="installation-modal-overlay"
-          @click="closeInstallationModal"
-        >
-          <div class="installation-modal" @click.stop>
-            <div class="installation-header">
-              <h2>
-                <span v-if="installationApp">{{ installationApp.name }}</span>
-                安装进程
-              </h2>
-              <div class="status-indicator" :class="{ active: isInstallationRunning }">
-                <span v-if="isInstallationRunning" class="status-text">正在安装</span>
-                <span v-else class="status-text"
-                  >安装已{{ isBackgroundInstallation ? '转入后台' : '完成' }}</span
-                >
-              </div>
-            </div>
+    <!-- Installation Modal (使用新组件) -->
+    <AppInstallationModal
+      :isVisible="showInstallationModal"
+      :app="installationApp"
+      :isInstalling="isInstallationRunning"
+      :isBackgroundInstallation="isBackgroundInstallation"
+      :progress="installationProgress"
+      :logs="formattedLogs"
+      @close="closeInstallationModal"
+      @abort="abortInstallation"
+      @background="handleBackgroundInstallation"
+    />
 
-            <!-- Terminal Logger -->
-            <div class="terminal-container">
-              <TerminalLogger
-                :logs="formattedLogs"
-                title="安装日志"
-                :auto-scroll="true"
-                height="300px"
-              />
-            </div>
-
-            <div class="installation-footer">
-              <div class="progress-info">
-                <div class="progress-percentage">{{ installationProgress }}%</div>
-                <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: `${installationProgress}%` }"></div>
-                </div>
-              </div>
-
-              <div class="action-buttons">
-                <button
-                  v-if="isInstallationRunning"
-                  class="action-btn background-btn"
-                  @click="
-                    isBackgroundInstallation = true
-                    closeInstallationModal()
-                  "
-                >
-                  在后台继续安装
-                </button>
-                <button
-                  v-if="isInstallationRunning"
-                  class="action-btn abort-btn"
-                  @click="abortInstallation"
-                >
-                  中止安装
-                </button>
-                <button
-                  v-if="!isInstallationRunning"
-                  class="action-btn close-btn"
-                  @click="closeInstallationModal"
-                >
-                  关闭
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </Teleport>
+    <!-- 后台安装指示器 (使用新组件) -->
+    <BackgroundInstallationIndicator
+      :installations="backgroundInstallations"
+      @click="showBackgroundInstallations"
+    />
   </div>
 </template>
 
@@ -1106,203 +1050,5 @@ const showBackgroundInstallations = () => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-}
-
-/* Installation Modal Styles */
-.installation-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.installation-modal {
-  background-color: var(--color-card);
-  border-radius: 10px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  width: 90%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-}
-
-.installation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.installation-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--color-text-strong);
-}
-
-.status-indicator {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  background-color: #e9e9e9;
-  transition: all 0.3s ease;
-}
-
-.status-indicator.active {
-  background-color: var(--color-primary);
-  color: white;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(76, 110, 245, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(76, 110, 245, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(76, 110, 245, 0);
-  }
-}
-
-.terminal-container {
-  margin-bottom: 20px;
-  flex-grow: 1;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.installation-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
-}
-
-.progress-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-percentage {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--color-text-strong);
-  min-width: 50px;
-}
-
-.progress-bar {
-  width: 250px;
-  height: 10px;
-  background-color: #e0e0e0;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--color-primary);
-  transition: width 0.3s ease;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.action-btn {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-}
-
-.background-btn {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.background-btn:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-1px);
-}
-
-.abort-btn {
-  background-color: #ff4d4f;
-  color: white;
-}
-
-.abort-btn:hover {
-  background-color: #ff1f1f;
-  transform: translateY(-1px);
-}
-
-.close-btn {
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.close-btn:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-1px);
-}
-
-/* New styles for the background installations indicator */
-.background-installations-indicator {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  padding: 12px 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.indicator-icon {
-  width: 20px;
-  height: 20px;
-  border: 2px solid white;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid transparent;
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.indicator-text {
-  font-size: 0.9rem;
-  color: white;
-  font-weight: 500;
 }
 </style>

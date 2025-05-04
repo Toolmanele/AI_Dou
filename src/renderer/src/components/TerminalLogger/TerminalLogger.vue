@@ -1,160 +1,160 @@
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import ProgressBar from "./ProgressBar.vue";
+import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue'
+// import ProgressBar from './ProgressBar.vue'
 
 const props = defineProps({
   /** Array of log objects to display */
   logs: {
     type: Array,
     required: true,
-    default: () => [],
+    default: () => []
   },
   /** Auto-scroll to the bottom when new logs are added */
   autoScroll: {
     type: Boolean,
-    default: true,
+    default: true
   },
   /** Height of the terminal container */
   height: {
     type: String,
-    default: "400px",
+    default: '400px'
   },
   /** Show the terminal title bar */
   showHeader: {
     type: Boolean,
-    default: true,
+    default: true
   },
   /** Title to display in the header */
   title: {
     type: String,
-    default: "Terminal Output",
+    default: 'Terminal Output'
   },
   /** Show timestamp for log entries */
   showTimestamp: {
     type: Boolean,
-    default: true,
+    default: true
   },
   /** Format to display the timestamp (default: timeString) */
   timestampFormat: {
     type: String,
-    default: "time", // 'time', 'date', 'datetime'
+    default: 'time' // 'time', 'date', 'datetime'
   },
   /** Show progress bar */
   showProgress: {
     type: Boolean,
-    default: true,
+    default: true
   },
   /** Enable debug mode (console logs) */
   debug: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
-const emit = defineEmits(["log-click"]);
+const emit = defineEmits(['log-click'])
 const currentProgress = computed(() => {
   if (props.logs?.length > 0) {
-    return props.logs[props.logs.length - 1].progress;
+    return props.logs[props.logs.length - 1].progress
   }
-  return 0;
-});
+  return 0
+})
 
 // Format timestamp based on configuration
 const formatTimestamp = (timestamp) => {
-  const date = timestamp ? new Date(timestamp) : new Date();
+  const date = timestamp ? new Date(timestamp) : new Date()
 
   switch (props.timestampFormat) {
-    case "date":
-      return date.toLocaleDateString();
-    case "datetime":
-      return date.toLocaleString();
-    case "time":
+    case 'date':
+      return date.toLocaleDateString()
+    case 'datetime':
+      return date.toLocaleString()
+    case 'time':
     default:
-      return date.toLocaleTimeString();
+      return date.toLocaleTimeString()
   }
-};
+}
 
 // 保存终端容器引用
-const terminalRef = ref(null);
+const terminalRef = ref(null)
 
 // Auto-scroll to bottom with improved implementation
 const scrollToBottom = () => {
-  if (!props.autoScroll) return;
+  if (!props.autoScroll) return
 
   nextTick(() => {
     if (terminalRef.value) {
-      terminalRef.value.scrollTop = terminalRef.value.scrollHeight;
+      terminalRef.value.scrollTop = terminalRef.value.scrollHeight
     }
-  });
-};
+  })
+}
 
 // 检测用户是否正在滚动查看历史记录
-const userScrolling = ref(false);
-const isAtBottom = ref(true);
-let scrollTimer = null;
+const userScrolling = ref(false)
+const isAtBottom = ref(true)
+let scrollTimer = null
 
 // 滚动指示器状态
-const hasNewLogs = ref(false);
+const hasNewLogs = ref(false)
 
 // 处理滚动事件
 const handleScroll = () => {
-  if (!terminalRef.value) return;
+  if (!terminalRef.value) return
 
   // 判断是否在底部附近
-  const { scrollTop, scrollHeight, clientHeight } = terminalRef.value;
-  const isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 30; // 30px tolerance
+  const { scrollTop, scrollHeight, clientHeight } = terminalRef.value
+  const isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 30 // 30px tolerance
 
-  isAtBottom.value = isScrolledToBottom;
+  isAtBottom.value = isScrolledToBottom
 
   // 如果滚动到底部，重置新日志标记
   if (isScrolledToBottom) {
-    hasNewLogs.value = false;
+    hasNewLogs.value = false
   }
 
   // 设置用户正在滚动
-  userScrolling.value = true;
+  userScrolling.value = true
 
   // 清除之前的计时器
-  if (scrollTimer) clearTimeout(scrollTimer);
+  if (scrollTimer) clearTimeout(scrollTimer)
 
   // 3秒内没有滚动操作就认为用户已停止滚动
   scrollTimer = setTimeout(() => {
-    userScrolling.value = false;
+    userScrolling.value = false
     // 如果设置了自动滚动并且用户已停止滚动，回到底部
     if (props.autoScroll && isAtBottom.value) {
-      scrollToBottom();
+      scrollToBottom()
     }
-  }, 3000);
-};
+  }, 3000)
+}
 
 // 点击"新日志"指示器时滚动到底部
 const scrollToBottomOnClick = () => {
-  scrollToBottom();
-  hasNewLogs.value = false;
-};
+  scrollToBottom()
+  hasNewLogs.value = false
+}
 
 // Handle log click
 const handleLogClick = (log) => {
-  emit("log-click", log);
-};
+  emit('log-click', log)
+}
 
 // 调试工具
-const debugMode = ref(props.debug);
+const debugMode = ref(props.debug)
 
 // 同步更新调试模式
 watch(
   () => props.debug,
   (newValue) => {
-    debugMode.value = newValue;
+    debugMode.value = newValue
   }
-);
+)
 
 // 调试日志
 const debug = (...args) => {
   if (debugMode.value) {
-    console.log("[TerminalLogger]", ...args);
+    console.log('[TerminalLogger]', ...args)
   }
-};
+}
 
 // Watch for changes in the logs array
 watch(
@@ -162,31 +162,31 @@ watch(
   (newLogs, oldLogs) => {
     // 确保newLogs是一个有效的数组
     if (!Array.isArray(newLogs)) {
-      console.error("Invalid logs array:", newLogs);
-      return;
+      console.error('Invalid logs array:', newLogs)
+      return
     }
     if (props.autoScroll && (!userScrolling.value || isAtBottom.value)) {
-      scrollToBottom();
+      scrollToBottom()
     } else {
       // 用户正在查看历史记录，标记有新日志
-      hasNewLogs.value = true;
+      hasNewLogs.value = true
     }
   },
   { deep: true, immediate: true }
-);
+)
 
 // 初始化滚动
 onMounted(() => {
   // 确保组件挂载后滚动到底部
   nextTick(() => {
-    scrollToBottom();
-  });
-});
+    scrollToBottom()
+  })
+})
 
 // 确保组件卸载时清除计时器
 onUnmounted(() => {
-  if (scrollTimer) clearTimeout(scrollTimer);
-});
+  if (scrollTimer) clearTimeout(scrollTimer)
+})
 </script>
 
 <template>
@@ -200,7 +200,7 @@ onUnmounted(() => {
       <div class="terminal-title">{{ title }}</div>
     </div>
 
-    <ProgressBar v-if="showProgress" :value="currentProgress" />
+    <!-- <ProgressBar v-if="showProgress" :value="currentProgress" /> -->
 
     <div
       class="terminal-container"
@@ -215,9 +215,7 @@ onUnmounted(() => {
         :class="['log-entry', log.type]"
         @click="handleLogClick(log)"
       >
-        <span v-if="showTimestamp" class="timestamp">{{
-          formatTimestamp(log.timestamp)
-        }}</span>
+        <span v-if="showTimestamp" class="timestamp">{{ formatTimestamp(log.timestamp) }}</span>
         <span class="log-icon" :class="log.type">●</span>
         <div class="log-text-wrapper">
           <span class="log-text">{{ log.text }}</span>
@@ -247,7 +245,7 @@ onUnmounted(() => {
   border: 1px solid #333;
   border-radius: 6px;
   overflow: hidden;
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   background-color: #1e1e1e;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -294,12 +292,12 @@ onUnmounted(() => {
   overflow-y: auto;
   color: #f8f8f8;
   background-color: #1e1e1e;
-  background-image: linear-gradient(
-    rgba(255, 255, 255, 0.03) 50%,
-    transparent 50%
-  );
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 50%, transparent 50%);
   background-size: 100% 4px;
   font-size: 14px;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 11%) transparent;
 }
 
 .log-entry {
@@ -433,7 +431,7 @@ onUnmounted(() => {
 }
 
 .new-logs-indicator::before {
-  content: "";
+  content: '';
   display: inline-block;
   width: 8px;
   height: 8px;

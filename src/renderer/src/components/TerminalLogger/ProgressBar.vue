@@ -1,46 +1,46 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   /** Current value of the progress (0-1) */
   value: {
     type: Number,
     required: true,
-    default: 0,
+    default: 0
   },
 
   /** Progress bar color */
   color: {
     type: String,
-    default: "#4caf50", // Default green
+    default: '#4caf50' // Default green
   },
   /** Show percentage text */
   showPercentage: {
     type: Boolean,
-    default: true,
+    default: true
   },
   /** Custom class for the progress bar */
   progressClass: {
     type: String,
-    default: "",
-  },
-});
+    default: ''
+  }
+})
 
 // Keep track of the last valid progress value
-const lastProgress = ref(0);
+const lastProgress = ref(0)
 
 // Computed percentage value
 const percentage = computed(() => {
   if (props.value !== null && props.value >= 0 && props.value <= 1) {
-    lastProgress.value = props.value;
+    lastProgress.value = props.value
   }
-  return lastProgress.value * 100;
-});
+  return lastProgress.value * 100
+})
 
 // Format the display label (percentage)
 const displayLabel = computed(() => {
-  return `${Math.round(percentage.value)}%`;
-});
+  return `${Math.round(percentage.value)}%`
+})
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const displayLabel = computed(() => {
       :class="progressClass"
       :style="{
         width: `${percentage}%`,
-        backgroundColor: color,
+        backgroundColor: color
       }"
     ></div>
     <div v-if="showPercentage" class="progress-text">
@@ -61,7 +61,7 @@ const displayLabel = computed(() => {
 
 <style scoped>
 .progress-bar-container {
-  height: 24px;
+  height: 14px;
   background-color: #2d2d2d;
   position: relative;
   padding: 2px;
