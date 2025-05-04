@@ -4,15 +4,19 @@ import SearchBar from '../components/appPage/SearchBar.vue'
 import TagSelector from '../components/appPage/TagSelector.vue'
 import AppList from '../components/appPage/AppList.vue'
 import ConfigModal from '../components/appPage/AppCreateModal.vue'
-import electronStore from '../services/electronStore'
+import TerminalLogger from '../components/TerminalLogger/TerminalLogger.vue'
 import { useAppCreateStore } from '../stores/appCreateStore'
 import { useAppStore } from '../stores/app'
-// Apps data - will be loaded from storage
-const apps = ref([])
-const isLoading = ref(true)
+
+// 使用 appStore 集中管理应用数据
+const appStore = useAppStore()
+const appCreateStore = useAppCreateStore()
+
+// 使用计算属性从 store 获取 apps 数据，保持响应式
+const apps = computed(() => appStore.apps)
+const isLoading = computed(() => appStore.isAppsLoading)
 const isElectronAvailable = ref(!!window.electronAPI)
 const isSaving = ref(false)
-const appCreateStore = useAppCreateStore()
 
 // Tag filtering - dynamically generated from apps data
 const availableTags = ref(['All'])
@@ -20,6 +24,7 @@ const selectedTags = ref(['All'])
 
 // Generate unique tags from apps
 function generateAvailableTags() {
+  console.log('apps 数据更新,需要重新生成 availableTags')
   // Start with 'All' tag
   const tags = new Set(['All'])
 
@@ -39,44 +44,20 @@ function generateAvailableTags() {
   })
 }
 
-// Update tags whenever apps are loaded or modified
-watch(apps, generateAvailableTags, { deep: true })
+// 由于 apps 现在是计算属性，需要调整 watch 的写法
+watch(() => apps.value, generateAvailableTags, { deep: true })
 
-// Load apps from storage
-async function loadApps() {
-  try {
-    // Initialize the data storage first
-    await electronStore.initializeStorage()
-
-    // Get apps from storage
-    const storedApps = await electronStore.getApps()
-    apps.value = storedApps
-    console.log('apps', apps.value)
-    // Generate available tags from loaded apps
-    generateAvailableTags()
-  } catch (error) {
-    console.error('Error loading apps:', error)
-    throw error // rethrow to allow the caller to handle it
-  }
-}
-
-// Initialize storage and load apps
+// 初始化应用数据
 onMounted(async () => {
   try {
-    // Initialize data storage & load apps
-    isLoading.value = true
-
-    // Try to load apps - this will fall back to memory storage if Electron APIs aren't available
-    await loadApps()
+    // 直接使用 appStore 加载应用数据，避免重复的存储逻辑
+    await appStore.loadApps()
   } catch (error) {
     console.error('Error initializing app data:', error)
-
     // Fallback to sample data if there was an error
     if (apps.value.length === 0) {
       console.log('Using sample data as fallback')
     }
-  } finally {
-    isLoading.value = false
   }
 })
 
@@ -264,23 +245,11 @@ const saveAppConfig = async (updatedApp) => {
     // Set saving state
     isSaving.value = true
 
-    // Create a clean, serializable copy of the app object
-    // This removes any Vue reactivity or circular references
-    const cleanApp = JSON.parse(JSON.stringify(updatedApp))
-
-    // Check if this is a new app (doesn't exist in the apps array)
-    const index = apps.value.findIndex((app) => app.id === cleanApp.id)
-
-    if (index === -1) {
-      // This is a new app, add it to the array
-      apps.value.push(cleanApp)
-      // Add the app to storage
-      await electronStore.addApp(cleanApp)
+    // 使用 appStore 统一处理应用的添加和更新操作
+    if (apps.value.some((app) => app.id === updatedApp.id)) {
+      await appStore.updateApp(updatedApp)
     } else {
-      // This is an existing app, update it
-      apps.value[index] = cleanApp
-      // Update the app in storage
-      await electronStore.updateApp(cleanApp)
+      await appStore.addApp(updatedApp)
     }
   } catch (error) {
     console.error('Error saving app:', error)
@@ -301,13 +270,8 @@ const openApp = (app, event) => {
 const deleteApp = async (app, event) => {
   if (confirm(`Are you sure you want to delete ${app.name}?`)) {
     try {
-      // Get the app ID as a simple value
-      const appId = app.id
-
-      // Remove from local array
-      apps.value = apps.value.filter((a) => a.id !== appId)
-      // Remove from storage
-      await electronStore.deleteApp(appId)
+      // 使用 appStore 删除应用，简化本组件中的数据处理逻辑
+      await appStore.deleteApp(app.id)
     } catch (error) {
       console.error('Error deleting app:', error)
       alert('Failed to delete the app. Please try again.')
@@ -341,10 +305,8 @@ const cloneApp = async (app, event) => {
       tags: validTags
     }
 
-    // Add to local array
-    apps.value.push(newApp)
-    // Add to storage
-    await electronStore.addApp(newApp)
+    // 使用 appStore 添加应用
+    await appStore.addApp(newApp)
   } catch (error) {
     console.error('Error cloning app:', error)
     alert('Failed to clone the app. Please try again.')
@@ -354,28 +316,6 @@ const cloneApp = async (app, event) => {
 // New function to handle creating a new app
 const openCreateAppModal = () => {
   console.log('openCreateAppModal')
-  // Default tag based on available tags (use Productivity if exists, else first non-All tag)
-  // let defaultTag = "Productivity";
-  // if (
-  //   !availableTags.value.includes(defaultTag) &&
-  //   availableTags.value.length > 1
-  // ) {
-  //   defaultTag = availableTags.value[1]; // First tag after 'All'
-  // }
-
-  // Create a template for a new app using only serializable data
-  // currentAppConfig.value = {
-  //   id: Date.now(), // Simple way to generate a unique ID
-  //   name: "New App",
-  //   tags: [defaultTag],
-  //   description: "Enter description here",
-  //   createdAt: new Date().toISOString().split("T")[0],
-  //   lastUsedAt: new Date().toISOString().split("T")[0],
-  //   icon: "💡",
-  //   filePath: "",
-  //   status: "setup",
-  //   setupProgress: 25,
-  // };
   appCreateStore.resetForm()
   // Set the modal position to center of viewport
   const viewportWidth = window.innerWidth
@@ -395,93 +335,264 @@ const openCreateAppModal = () => {
   document.body.style.overflow = 'hidden'
 }
 
-// 处理应用创建事件
+// 处理应用创建
 const handleAppCreated = async (newApp) => {
   try {
-    console.log('Handling app creation:', newApp)
-    apps.value.push(newApp)
-    await electronStore.addApp(newApp)
-    // 创建应用 - 使用JSON序列化来创建一个纯数据对象，移除可能的响应式包装和不可序列化的属性
-    const serializedApp = JSON.parse(JSON.stringify(newApp))
-    // window.electronAPI
-    //   .createApp(serializedApp)
-    //   .then(async (result) => {
-    //     console.log('createApp result', result)
-    //     if (result.success) {
-    //       // 查找应用在数组中的索引
-    //       const appIndex = apps.value.findIndex((app) => app.id === newApp.id)
-    //       console.log(appIndex)
-    //       if (appIndex !== -1) {
-    //         // 更新Python环境信息 - 保留原有数据结构并更新必要参数
-    //         const existingApp = apps.value[appIndex]
-    //         const updatedPythonEnvironments = existingApp.pythonEnvironments || []
+    console.log('handleAppCreated 被调用:', newApp.name, '事件时间:', new Date().toISOString())
 
-    //         // 将result中的Python环境信息合并到现有环境中
-    //         if (result.pythonEnvironments && result.pythonEnvironments.length > 0) {
-    //           result.pythonEnvironments.forEach((resultEnv) => {
-    //             // 查找对应版本的环境
-    //             const existingEnvIndex = updatedPythonEnvironments.findIndex(
-    //               (env) => env.pythonVersion === resultEnv.pythonVersion
-    //             )
+    // 使用 appStore 添加应用，统一数据管理
+    await appStore.addApp(newApp)
+    console.log('handleAppCreated 完成添加:', newApp.name)
 
-    //             if (existingEnvIndex !== -1) {
-    //               // 更新现有环境
-    //               updatedPythonEnvironments[existingEnvIndex] = {
-    //                 ...updatedPythonEnvironments[existingEnvIndex],
-    //                 isInstalled: resultEnv.isInstalled,
-    //                 pythonPath:
-    //                   resultEnv.pythonPath || updatedPythonEnvironments[existingEnvIndex].pythonPath
-    //               }
-    //             } else {
-    //               // 添加新环境
-    //               updatedPythonEnvironments.push(resultEnv)
-    //             }
-    //           })
-    //         }
+    // 关闭配置模态窗口
+    closeConfigModal()
 
-    //         // 更新应用信息 - 直接在原位置更新
-    //         apps.value[appIndex] = {
-    //           ...existingApp,
-    //           pythonEnvironments: updatedPythonEnvironments,
-    //           folderPath: result.appPath || existingApp.folderPath
-    //         }
-
-    //         // 更新存储
-    //         await electronStore.updateApp(apps.value[appIndex])
-    //       } else {
-    //         // 如果应用不在列表中（新创建的应用），则添加到列表
-    //         const appToAdd = {
-    //           ...newApp,
-    //           pythonEnvironments: result.pythonEnvironments || [],
-    //           folderPath: result.appPath || newApp.folderPath
-    //         }
-
-    //         console.log('Adding new app to list:', appToAdd)
-
-    //         // 添加到应用列表
-    //         apps.value.push(appToAdd)
-
-    //         // 添加到存储
-    //         await electronStore.addApp(appToAdd)
-    //       }
-
-    //       // 重新生成标签
-    //       generateAvailableTags()
-    //     } else {
-    //       console.error('App creation failed:', result.error)
-    //       alert(`应用创建失败: ${result.error || '未知错误'}`)
-    //     }
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error in createApp:', error)
-    //     alert(`创建应用时发生错误: ${error.message}`)
-    //   })
-
-    // 关闭模态窗口
-    // closeConfigModal();
+    // 显示安装进程模态窗口
+    openInstallationModal(newApp)
   } catch (error) {
     console.error('Error handling app creation:', error)
     alert('应用创建出错，请重试')
+  }
+}
+
+// 安装过程相关状态
+const showInstallationModal = ref(false)
+const installationApp = ref(null)
+const installationLogs = ref([])
+const formattedLogs = ref([])
+const installationProgress = ref(0)
+const isInstallationRunning = ref(false)
+const isBackgroundInstallation = ref(false)
+const backgroundInstallations = ref([]) // 跟踪后台运行的安装
+
+// 更新后台安装指示器
+const updateBackgroundInstallations = () => {
+  if (isBackgroundInstallation.value && isInstallationRunning.value && installationApp.value) {
+    // 检查是否已经在列表中
+    const exists = backgroundInstallations.value.some((app) => app.id === installationApp.value.id)
+    if (!exists) {
+      backgroundInstallations.value.push({
+        id: installationApp.value.id,
+        name: installationApp.value.name,
+        progress: installationProgress.value
+      })
+    } else {
+      // 更新已有的进度
+      const index = backgroundInstallations.value.findIndex(
+        (app) => app.id === installationApp.value.id
+      )
+      if (index !== -1) {
+        backgroundInstallations.value[index].progress = installationProgress.value
+      }
+    }
+  }
+}
+
+// 当进度更新时更新后台安装指示器
+watch(installationProgress, updateBackgroundInstallations)
+
+// 当安装完成时从后台列表移除
+watch(isInstallationRunning, (running) => {
+  if (!running && installationApp.value) {
+    backgroundInstallations.value = backgroundInstallations.value.filter(
+      (app) => app.id !== installationApp.value.id
+    )
+  }
+})
+
+// 打开安装进程模态窗口
+const openInstallationModal = (app) => {
+  installationApp.value = app
+
+  // 初始化日志
+  const initialLog = `开始安装应用: ${app.name}...`
+  installationLogs.value = [initialLog]
+
+  // 格式化日志以适配TerminalLogger组件
+  formattedLogs.value = [
+    {
+      id: Date.now(),
+      text: initialLog,
+      type: 'info',
+      timestamp: new Date(),
+      progress: 0
+    }
+  ]
+
+  installationProgress.value = 0
+  isInstallationRunning.value = true
+  isBackgroundInstallation.value = false
+  showInstallationModal.value = true
+
+  // 模拟开始安装进程
+  startInstallation(app)
+}
+
+// 添加日志并格式化
+const addInstallationLog = (text, type = 'info', progress = null) => {
+  // 添加到原始日志
+  installationLogs.value.push(text)
+
+  // 添加到格式化日志
+  formattedLogs.value.push({
+    id: Date.now(),
+    text,
+    type: type || 'info',
+    timestamp: new Date(),
+    progress:
+      progress !== null
+        ? progress / 100
+        : formattedLogs.value[formattedLogs.value.length - 1]?.progress || 0
+  })
+
+  // 更新进度
+  if (progress !== null) {
+    installationProgress.value = progress
+  }
+}
+
+// 开始安装进程
+const startInstallation = async (app) => {
+  try {
+    isInstallationRunning.value = true
+
+    // 这里应该调用真实的安装API
+    if (window.electronAPI && window.electronAPI.installApp) {
+      // 真实环境下的安装逻辑
+      const installerId = await window.electronAPI.installApp({
+        appId: app.id,
+        name: app.name,
+        folderPath: app.folderPath,
+        pythonEnvironments: app.pythonEnvironments || []
+      })
+
+      console.log('安装进程ID:', installerId)
+
+      // 注册安装进度监听器
+      if (window.electronAPI.onAppInstallProgress) {
+        window.electronAPI.onAppInstallProgress((data) => {
+          if (!isInstallationRunning.value) return
+
+          // 添加日志
+          if (data.message) {
+            addInstallationLog(data.message, data.type, data.progress)
+          }
+
+          // 检查是否完成
+          if (data.status === 'completed') {
+            finishInstallation(true)
+          } else if (data.status === 'error') {
+            addInstallationLog(`❌ 安装失败: ${data.error || '未知错误'}`, 'error')
+            isInstallationRunning.value = false
+          }
+        })
+      }
+    } else {
+      // 模拟安装进程 (仅用于开发测试)
+      simulateInstallation()
+    }
+  } catch (error) {
+    console.error('启动安装进程失败:', error)
+    addInstallationLog(`❌ 启动安装失败: ${error.message}`, 'error')
+    isInstallationRunning.value = false
+  }
+}
+
+// 模拟安装进程 (仅用于测试)
+const simulateInstallation = () => {
+  const steps = [
+    { message: '正在初始化安装环境...', progress: 5 },
+    { message: '检查Python环境...', progress: 10 },
+    { message: '创建虚拟环境...', progress: 20 },
+    { message: '安装基础依赖...', progress: 30 },
+    { message: '安装PyTorch...', progress: 40 },
+    { message: '下载应用代码...', progress: 60 },
+    { message: '安装应用依赖...', progress: 70 },
+    { message: '配置环境变量...', progress: 80 },
+    { message: '验证安装...', progress: 90 },
+    { message: '✅ 安装完成！', progress: 100 }
+  ]
+
+  let currentStep = 0
+  const interval = setInterval(() => {
+    if (currentStep < steps.length && isInstallationRunning.value) {
+      const step = steps[currentStep]
+      addInstallationLog(step.message, null, step.progress)
+      currentStep++
+
+      if (currentStep === steps.length) {
+        clearInterval(interval)
+        finishInstallation(true)
+      }
+    } else {
+      clearInterval(interval)
+    }
+  }, 1500)
+}
+
+// 安装完成处理
+const finishInstallation = (success) => {
+  isInstallationRunning.value = false
+
+  if (success) {
+    addInstallationLog('✅ 应用安装成功！可以开始使用了。')
+  }
+
+  // 如果是后台安装，直接关闭模态框但不暂停安装
+  if (isBackgroundInstallation.value) {
+    closeInstallationModal()
+  }
+}
+
+// 关闭安装进程模态窗口
+const closeInstallationModal = () => {
+  // 如果安装仍在进行，切换到后台模式
+  if (isInstallationRunning.value) {
+    isBackgroundInstallation.value = true
+  }
+
+  showInstallationModal.value = false
+}
+
+// 中止安装进程
+const abortInstallation = () => {
+  if (!isInstallationRunning.value) return
+
+  if (confirm('警告：中止安装可能会导致应用不完整或无法使用。确定要中止安装吗？')) {
+    isInstallationRunning.value = false
+    addInstallationLog('⚠️ 安装已被用户中止', 'warning')
+
+    // 调用实际的中止API
+    if (window.electronAPI && window.electronAPI.abortAppInstallation && installationApp.value) {
+      window.electronAPI
+        .abortAppInstallation(installationApp.value.id)
+        .then(() => {
+          console.log('安装进程已中止')
+        })
+        .catch((error) => {
+          console.error('中止安装失败:', error)
+        })
+    }
+  }
+}
+
+// 显示后台安装状态
+const showBackgroundInstallations = () => {
+  // 如果有正在后台安装的应用，显示安装模态框
+  if (backgroundInstallations.value.length > 0) {
+    // 找到第一个后台安装的应用
+    const firstBackgroundApp = backgroundInstallations.value[0]
+
+    // 在应用列表中找到完整的应用信息
+    const appInfo = apps.value.find((app) => app.id === firstBackgroundApp.id)
+
+    if (appInfo) {
+      // 重新打开安装模态框
+      isBackgroundInstallation.value = false
+      showInstallationModal.value = true
+
+      // 无需重新启动安装，因为它已经在运行
+    }
   }
 }
 </script>
@@ -504,6 +615,18 @@ const handleAppCreated = async (newApp) => {
           @toggle-filter-mode="toggleFilterMode"
           @reset-filters="resetFilters"
         />
+      </div>
+
+      <!-- 后台安装指示器 -->
+      <div
+        v-if="backgroundInstallations.length > 0"
+        class="background-installations-indicator"
+        @click="showBackgroundInstallations"
+      >
+        <div class="indicator-icon">
+          <span class="spinner"></span>
+        </div>
+        <div class="indicator-text">{{ backgroundInstallations.length }} 个应用正在后台安装</div>
       </div>
 
       <!-- Main Content Area for Apps -->
@@ -592,6 +715,78 @@ const handleAppCreated = async (newApp) => {
           @save="saveAppConfig"
           @create="handleAppCreated"
         />
+      </transition>
+    </Teleport>
+
+    <!-- Installation Modal -->
+    <Teleport to="body">
+      <transition name="modal-fade">
+        <div
+          v-if="showInstallationModal"
+          class="installation-modal-overlay"
+          @click="closeInstallationModal"
+        >
+          <div class="installation-modal" @click.stop>
+            <div class="installation-header">
+              <h2>
+                <span v-if="installationApp">{{ installationApp.name }}</span>
+                安装进程
+              </h2>
+              <div class="status-indicator" :class="{ active: isInstallationRunning }">
+                <span v-if="isInstallationRunning" class="status-text">正在安装</span>
+                <span v-else class="status-text"
+                  >安装已{{ isBackgroundInstallation ? '转入后台' : '完成' }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Terminal Logger -->
+            <div class="terminal-container">
+              <TerminalLogger
+                :logs="formattedLogs"
+                title="安装日志"
+                :auto-scroll="true"
+                height="300px"
+              />
+            </div>
+
+            <div class="installation-footer">
+              <div class="progress-info">
+                <div class="progress-percentage">{{ installationProgress }}%</div>
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: `${installationProgress}%` }"></div>
+                </div>
+              </div>
+
+              <div class="action-buttons">
+                <button
+                  v-if="isInstallationRunning"
+                  class="action-btn background-btn"
+                  @click="
+                    isBackgroundInstallation = true
+                    closeInstallationModal()
+                  "
+                >
+                  在后台继续安装
+                </button>
+                <button
+                  v-if="isInstallationRunning"
+                  class="action-btn abort-btn"
+                  @click="abortInstallation"
+                >
+                  中止安装
+                </button>
+                <button
+                  v-if="!isInstallationRunning"
+                  class="action-btn close-btn"
+                  @click="closeInstallationModal"
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </transition>
     </Teleport>
   </div>
@@ -911,5 +1106,203 @@ const handleAppCreated = async (newApp) => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Installation Modal Styles */
+.installation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.installation-modal {
+  background-color: var(--color-card);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+}
+
+.installation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.installation-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.status-indicator {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  background-color: #e9e9e9;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.active {
+  background-color: var(--color-primary);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 110, 245, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(76, 110, 245, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(76, 110, 245, 0);
+  }
+}
+
+.terminal-container {
+  margin-bottom: 20px;
+  flex-grow: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.installation-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-percentage {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--color-text-strong);
+  min-width: 50px;
+}
+
+.progress-bar {
+  width: 250px;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.background-btn {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.background-btn:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.abort-btn {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.abort-btn:hover {
+  background-color: #ff1f1f;
+  transform: translateY(-1px);
+}
+
+.close-btn {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.close-btn:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+/* New styles for the background installations indicator */
+.background-installations-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.indicator-icon {
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.indicator-text {
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 500;
 }
 </style>

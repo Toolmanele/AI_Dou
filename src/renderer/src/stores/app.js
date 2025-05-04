@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useSettingsStore } from './settings'
+import electronStore from '../services/electronStore'
 // 使用组合式API风格定义 Store
 export const useAppStore = defineStore('app', () => {
   // 状态
@@ -9,6 +10,9 @@ export const useAppStore = defineStore('app', () => {
   const isDarkMode = ref(false)
   // 添加系统信息加载状态
   const isSystemInfoLoading = ref(true)
+  // Apps数据状态
+  const apps = ref([])
+  const isAppsLoading = ref(false)
 
   // 系统信息
   const systemInfo = ref({
@@ -194,10 +198,87 @@ export const useAppStore = defineStore('app', () => {
     return systemInfo.value
   }
 
+  // 从API获取应用数据
   async function getAppsData() {
-    const apps = await window.electronAPI.getAppsData()
-    return apps
+    if (window.electronAPI && window.electronAPI.getAppsData) {
+      const appsData = await window.electronAPI.getAppsData()
+      return appsData
+    }
+    return []
   }
+
+  // 从存储加载所有应用
+  async function loadApps() {
+    try {
+      isAppsLoading.value = true
+      // 初始化存储
+      await electronStore.initializeStorage()
+      // 从存储获取应用
+      const storedApps = await electronStore.getApps()
+      apps.value = storedApps
+      console.log('应用数据已加载:', apps.value)
+      isAppsLoading.value = false
+      return apps.value
+    } catch (error) {
+      console.error('加载应用数据失败:', error)
+      isAppsLoading.value = false
+      throw error
+    }
+  }
+
+  // 添加新应用
+  async function addApp(app) {
+    try {
+      console.log('appStore.addApp 被调用:', app.name, '当前 apps 长度:', apps.value.length)
+      // 创建一个干净的可序列化副本
+      const cleanApp = JSON.parse(JSON.stringify(app))
+      // 添加到本地数组
+      apps.value.push(cleanApp)
+      console.log('appStore.addApp 添加后 apps 长度:', apps.value.length)
+      // 添加到存储
+      // await electronStore.addApp(cleanApp)
+      return cleanApp
+    } catch (error) {
+      console.error('添加应用失败:', error)
+      throw error
+    }
+  }
+
+  // 更新现有应用
+  async function updateApp(updatedApp) {
+    try {
+      // 创建一个干净的可序列化副本
+      const cleanApp = JSON.parse(JSON.stringify(updatedApp))
+      // 查找应用索引
+      const index = apps.value.findIndex((app) => app.id === cleanApp.id)
+      if (index !== -1) {
+        // 更新本地数组
+        apps.value[index] = cleanApp
+        // 更新存储
+        await electronStore.updateApp(cleanApp)
+        return cleanApp
+      }
+      throw new Error(`未找到ID为 ${cleanApp.id} 的应用`)
+    } catch (error) {
+      console.error('更新应用失败:', error)
+      throw error
+    }
+  }
+
+  // 删除应用
+  async function deleteApp(appId) {
+    try {
+      // 从本地数组移除
+      apps.value = apps.value.filter((app) => app.id !== appId)
+      // 从存储移除
+      await electronStore.deleteApp(appId)
+      return true
+    } catch (error) {
+      console.error('删除应用失败:', error)
+      throw error
+    }
+  }
+
   return {
     // 状态
     appName,
@@ -205,6 +286,8 @@ export const useAppStore = defineStore('app', () => {
     isDarkMode,
     systemInfo,
     isSystemInfoLoading,
+    apps,
+    isAppsLoading,
 
     // Getter
     fullAppName,
@@ -213,6 +296,10 @@ export const useAppStore = defineStore('app', () => {
     toggleDarkMode,
     getVersionInfo,
     getSystemInfo,
-    getAppsData
+    getAppsData,
+    loadApps,
+    addApp,
+    updateApp,
+    deleteApp
   }
 })
