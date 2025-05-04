@@ -214,7 +214,8 @@ export const useAppStore = defineStore('app', () => {
       // 初始化存储
       await electronStore.initializeStorage()
       // 从存储获取应用
-      const storedApps = await electronStore.getApps()
+      const storedApps = await getAppsData()
+      console.log('storedApps', storedApps)
       apps.value = storedApps
       console.log('应用数据已加载:', apps.value)
       isAppsLoading.value = false

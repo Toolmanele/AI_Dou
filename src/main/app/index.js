@@ -17,12 +17,12 @@ export async function getAppsData() {
     appsData = []
     try {
       await ensureDir(appsInfoPath)
-      const appsInfoJson = await fs.readdir(appsInfoPath)
+      const appsInfoJson = await fsp.readdir(appsInfoPath)
 
       for (const app of appsInfoJson) {
         try {
           const filePath = path.join(appsInfoPath, app)
-          const fileContent = await fs.readFile(filePath, 'utf-8')
+          const fileContent = await fsp.readFile(filePath, 'utf-8')
           try {
             const appInfo = JSON.parse(fileContent)
             appsData.push(appInfo)

@@ -62,9 +62,17 @@ const setupProgressListener = () => {
   if (window.electronAPI && window.electronAPI.onInstallProgress && !isListenerSet) {
     // 设置监听器
     window.electronAPI.onInstallProgress((data) => {
-      if (data.logs && Array.isArray(data.logs)) {
+      console.log('data', data)
+      if (data && data.message) {
         // 添加新日志
-        logs.value = [...logs.value, ...data.logs]
+        console.log('data.message', data.message)
+        // 这里的log {id,type,text,timestamp}
+        logs.value.push({
+          id: Math.random().toString(36).substring(2, 15),
+          type: data.status,
+          text: data.message,
+          timestamp: new Date().toISOString()
+        })
       }
 
       // 更新进度
