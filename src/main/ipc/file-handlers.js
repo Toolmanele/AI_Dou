@@ -40,9 +40,9 @@ function setupFileHandlers() {
     const appSpace = settings.appSpace
 
     // 生成不存在的唯一路径
-    let folderPath = getUniqueIdByName(name)
+    let folderPath = path.join(appSpace, getUniqueIdByName(name))
     while (fs.existsSync(folderPath)) {
-      folderPath = getUniqueIdByName(name)
+      folderPath = path.join(appSpace, getUniqueIdByName(name))
     }
     return folderPath
   })

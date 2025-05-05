@@ -810,6 +810,7 @@ export const useAppCreateStore = defineStore('appCreate', () => {
     setAppDataFromGithub,
     setAppDataFromFolder,
     setAppByGithub,
-    setAppByFolder
+    setAppByFolder,
+    setAppBySeed
   }
 })

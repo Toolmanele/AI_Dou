@@ -16,13 +16,7 @@
               placeholder="输入关键词搜索模板..."
               @input="searchSeeds"
             />
-            <button
-              class="clear-button"
-              v-if="searchQuery"
-              @click="clearSearch"
-            >
-              ×
-            </button>
+            <button class="clear-button" v-if="searchQuery" @click="clearSearch">×</button>
           </div>
         </div>
 
@@ -65,11 +59,7 @@
 
       <div class="modal-footer">
         <button class="cancel-button" @click="$emit('close')">取消</button>
-        <button
-          class="confirm-button"
-          @click="confirmSelection"
-          :disabled="!selectedSeed"
-        >
+        <button class="confirm-button" @click="confirmSelection" :disabled="!selectedSeed">
           确认
         </button>
       </div>
@@ -78,95 +68,93 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import { useAppCreateStore } from "../../../stores/appCreateStore";
-import { getAvailableSeeds } from "../../../services/seedService";
-const emit = defineEmits(["close", "confirm"]);
-const store = useAppCreateStore();
+import { ref, onMounted, computed } from 'vue'
+import { useAppCreateStore } from '../../../stores/appCreateStore'
+import { getAvailableSeeds } from '../../../services/seedService'
+const emit = defineEmits(['close', 'confirm'])
+const store = useAppCreateStore()
 
 // State variables
-const loading = ref(false);
-const error = ref(null);
-const seeds = ref([]);
-const filteredSeeds = ref([]);
-const searchQuery = ref("");
+const loading = ref(false)
+const error = ref(null)
+const seeds = ref([])
+const filteredSeeds = ref([])
+const searchQuery = ref('')
 // const selectedSeed = ref(store.selectedSeed);
-const selectedSeed = computed(() => store.selectedSeed);
+const selectedSeed = computed(() => store.selectedSeed)
 // Search seeds based on the query
 function searchSeeds() {
   if (!searchQuery.value.trim()) {
-    filteredSeeds.value = seeds.value;
-    return;
+    filteredSeeds.value = seeds.value
+    return
   }
 
-  const query = searchQuery.value.toLowerCase();
+  const query = searchQuery.value.toLowerCase()
   filteredSeeds.value = seeds.value.filter((seed) => {
     return (
       seed.name.toLowerCase().includes(query) ||
       (seed.description && seed.description.toLowerCase().includes(query)) ||
       (seed.tags && seed.tags.some((tag) => tag.toLowerCase().includes(query)))
-    );
-  });
+    )
+  })
 }
 
 // Clear search query
 function clearSearch() {
-  searchQuery.value = "";
-  filteredSeeds.value = seeds.value;
+  searchQuery.value = ''
+  filteredSeeds.value = seeds.value
 }
 
 // Check if a seed is currently selected
 function isSelected(seed) {
-  return selectedSeed.value && selectedSeed.value.id === seed.id;
+  return selectedSeed.value && selectedSeed.value.id === seed.id
 }
 
 // Select a seed
 function selectSeed(seed) {
-  store.selectedSeed = seed;
+  store.selectedSeed = seed
   // selectedSeed.value = seed;
 }
 
 // Confirm selection
 function confirmSelection() {
-  emit("close");
+  emit('close')
   if (selectedSeed.value) {
     // 直接使用 setAppDataFromSeed 函数设置数据
-    store.setAppDataFromSeed(selectedSeed.value);
+    store.setAppBySeed(selectedSeed.value)
   }
 }
 
 // Load seeds data on component mount
 onMounted(async () => {
   try {
-    loading.value = true;
-    error.value = null;
-    let seedsData = await getAvailableSeeds();
+    loading.value = true
+    error.value = null
+    let seedsData = await getAvailableSeeds()
     if (seedsData && seedsData.length > 0) {
       seedsData.forEach((seed) => {
         // 为 seed 生成 id
-        seed.id = Math.random().toString(36).substring(2, 15);
-      });
+        seed.id = Math.random().toString(36).substring(2, 15)
+      })
     }
-    seeds.value = seedsData;
+    seeds.value = seedsData
 
-    filteredSeeds.value = seeds.value;
+    filteredSeeds.value = seeds.value
 
     // If there's a previously selected seed, find and select it
     if (store.selectedSeed) {
-      const existingSeed = seeds.value.find(
-        (seed) => seed.id === store.selectedSeed.id
-      );
+      const existingSeed = seeds.value.find((seed) => seed.id === store.selectedSeed.id)
       if (existingSeed) {
-        selectedSeed.value = existingSeed;
+        selectedSeed.value = existingSeed
       }
     }
   } catch (err) {
-    console.error("加载种子模板失败:", err);
-    error.value = "加载模板失败: " + (err.message || "未知错误");
+    console.error('加载种子模板失败:', err)
+    error.value = '加载模板失败: ' + (err.message || '未知错误')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 </script>
 
 <style scoped>

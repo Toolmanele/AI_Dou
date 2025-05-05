@@ -101,13 +101,28 @@
 
     <div class="form-group">
       <label for="app-name">应用名称 <span class="required">*</span></label>
-      <input
-        id="app-name"
-        v-model="store.appData.name"
-        type="text"
-        placeholder="给你的应用起个名字"
-        :class="{ error: store.errors.name }"
-      />
+      <div class="edit-field-container">
+        <template v-if="isNameEditing">
+          <input
+            id="app-name"
+            v-model="tempName"
+            type="text"
+            placeholder="给你的应用起个名字"
+            :class="{ error: store.errors.name }"
+            style="width: 100%"
+          />
+          <div class="edit-actions">
+            <button class="edit-btn save" @click="saveNameEdit" title="保存">✓</button>
+            <button class="edit-btn cancel" @click="cancelNameEdit" title="取消">✕</button>
+          </div>
+        </template>
+        <template v-else>
+          <div class="field-display">
+            <span class="field-value">{{ store.appData.name || '未设置' }}</span>
+            <button class="edit-btn" @click="startEditingName" title="编辑">✎</button>
+          </div>
+        </template>
+      </div>
       <div v-if="store.errors.name" class="error-message">
         {{ store.errors.name }}
       </div>
@@ -115,12 +130,29 @@
 
     <div class="form-group">
       <label for="app-description">应用描述</label>
-      <textarea
-        id="app-description"
-        v-model="store.appData.description"
-        placeholder="描述一下这个应用的功能和用途"
-        rows="3"
-      ></textarea>
+      <div class="edit-field-container">
+        <template v-if="isDescriptionEditing">
+          <textarea
+            id="app-description"
+            v-model="tempDescription"
+            placeholder="描述一下这个应用的功能和用途"
+            rows="3"
+            style="width: 100%"
+          ></textarea>
+          <div class="edit-actions">
+            <button class="edit-btn save" @click="saveDescriptionEdit" title="保存">✓</button>
+            <button class="edit-btn cancel" @click="cancelDescriptionEdit" title="取消">✕</button>
+          </div>
+        </template>
+        <template v-else>
+          <div class="field-display">
+            <span class="field-value description">{{
+              store.appData.description || '未设置描述'
+            }}</span>
+            <button class="edit-btn" @click="startEditingDescription" title="编辑">✎</button>
+          </div>
+        </template>
+      </div>
     </div>
 
     <div class="form-group">
@@ -220,6 +252,46 @@ const availableTags = [
   '视频处理',
   '自动化工具'
 ]
+
+// First, add the editing state variables in the script section
+// Find the script setup section and add these variables after the imports
+const isNameEditing = ref(false)
+const isDescriptionEditing = ref(false)
+
+// Add temporary storage for the values while editing
+const tempName = ref('')
+const tempDescription = ref('')
+
+// Add functions to handle editing
+function startEditingName() {
+  tempName.value = store.appData.name
+  isNameEditing.value = true
+}
+
+function saveNameEdit() {
+  if (tempName.value.trim()) {
+    store.appData.name = tempName.value
+    isNameEditing.value = false
+  }
+}
+
+function cancelNameEdit() {
+  isNameEditing.value = false
+}
+
+function startEditingDescription() {
+  tempDescription.value = store.appData.description
+  isDescriptionEditing.value = true
+}
+
+function saveDescriptionEdit() {
+  store.appData.description = tempDescription.value
+  isDescriptionEditing.value = false
+}
+
+function cancelDescriptionEdit() {
+  isDescriptionEditing.value = false
+}
 
 function startAddCustomTag() {
   isAddingCustomTag.value = true
@@ -632,5 +704,72 @@ input.error {
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+/* Edit field container styles */
+.edit-field-container {
+  position: relative;
+  width: 100%;
+}
+
+.field-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  min-height: 42px;
+}
+
+.field-value {
+  flex: 1;
+  color: #374151;
+  word-break: break-word;
+}
+
+.field-value.description {
+  white-space: pre-line;
+  min-height: 60px;
+}
+
+.edit-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+  color: #4b5563;
+  background-color: #e5e7eb;
+}
+
+.edit-actions {
+  display: flex;
+  margin-top: 8px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.edit-btn.save {
+  color: #059669;
+}
+
+.edit-btn.save:hover {
+  background-color: #ecfdf5;
+}
+
+.edit-btn.cancel {
+  color: #dc2626;
+}
+
+.edit-btn.cancel:hover {
+  background-color: #fef2f2;
 }
 </style>

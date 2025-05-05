@@ -88,7 +88,7 @@ const {
 import BasicInfoStep from './BasicInfoStep.vue'
 import GitHubSetupStep from './GitHubSetupStep.vue'
 import DirectorySetupStep from './DirectorySetupStep.vue'
-import PythonEnvironmentStep from './PythonEnvironmentStepPlus.vue'
+import PythonEnvironmentStep from './PythonEnvironmentStepPlusFolder.vue'
 import StepsSidebar from './StepsSidebar.vue'
 
 // Get the stores
