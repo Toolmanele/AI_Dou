@@ -54,21 +54,12 @@
                 :key="cmdIndex"
                 class="command-item"
               >
-                <div class="command-display" v-if="!pytorchCommandsEditMode[cmdIndex]">
-                  {{ getFormattedCommands([cmd], 'pytorch', environment.pytorch.source)[0] }}
-                  <button class="edit-command-button" @click="togglePytorchCommandEdit(cmdIndex)">
-                    <span title="编辑">✎</span>
-                  </button>
-                </div>
-                <textarea
-                  ref="commandTextareas"
-                  :key="`pytorch-modal-${cmdIndex}`"
+                <EditableField
                   v-model="environment.pytorch.installCommands[cmdIndex]"
-                  :rows="Math.max(1, cmd.split('\n').length)"
-                  :class="['command-textarea', { hidden: !pytorchCommandsEditMode[cmdIndex] }]"
-                  @input="autoResizeTextarea($event.target)"
-                  @blur="togglePytorchCommandEdit(cmdIndex)"
-                ></textarea>
+                  :placeholder="getSourcePlaceholder('pytorch')"
+                  emptyText="未设置命令"
+                  inputType="textarea"
+                />
                 <button
                   v-if="environment.pytorch.installCommands.length > 1"
                   class="remove-button"
@@ -124,11 +115,10 @@
                   <span class="command-tip">
                     --index-url={{ formatData.getSourceUrl(environment.pip.source, 'pip') }}
                   </span>
-                  <input
-                    type="text"
+                  <EditableField
                     v-model="environment.pip.installCommands[cmdIndex]"
-                    class="command-input"
-                    placeholder="例如: pip install -r requirements.txt"
+                    :placeholder="'例如: pip install -r requirements.txt'"
+                    emptyText="未设置命令"
                   />
                   <button
                     v-if="environment.pip.installCommands.length > 1"
@@ -146,11 +136,11 @@
         <!-- Launch Command -->
         <div class="form-group">
           <label>启动命令 <span class="required">*</span></label>
-          <input
-            type="text"
+          <EditableField
             v-model="environment.startCommand"
             placeholder="例如: python main.py"
-            :class="{ error: errors.startCommand }"
+            :error="errors.startCommand"
+            emptyText="未设置启动命令"
           />
           <div v-if="errors.startCommand" class="error-message">
             {{ errors.startCommand }}
@@ -175,8 +165,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch, nextTick } from 'vue'
+import { ref, reactive } from 'vue'
 import formatData from '../../../services/formatData'
+import { EditableField } from '../../../components/common'
 
 const props = defineProps({
   environment: {
@@ -194,43 +185,10 @@ const emit = defineEmits(['close', 'save'])
 // Python versions available for selection
 const pythonVersions = ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
 
-// Edit mode for PyTorch commands
-const pytorchCommandsEditMode = ref({})
-
 // Error state
 const errors = reactive({
   startCommand: ''
 })
-
-// textarea refs
-const commandTextareas = ref([])
-
-// 自动调整所有 textarea 高度
-function resizeAllTextareas() {
-  nextTick(() => {
-    if (commandTextareas.value) {
-      commandTextareas.value.forEach((el) => {
-        if (el) autoResizeTextarea(el)
-      })
-    }
-  })
-}
-
-// Toggle edit mode for PyTorch commands
-function togglePytorchCommandEdit(index) {
-  pytorchCommandsEditMode.value[index] = !pytorchCommandsEditMode.value[index]
-  if (pytorchCommandsEditMode.value[index]) {
-    nextTick(() => {
-      const textarea = commandTextareas.value.find(
-        (el) => el && el.getAttribute('key') === `pytorch-modal-${index}`
-      )
-      if (textarea) {
-        textarea.focus()
-        autoResizeTextarea(textarea)
-      }
-    })
-  }
-}
 
 // Source update functions
 function updatePytorchSource(source) {
@@ -244,10 +202,6 @@ function updatePipSource(source) {
 // Command management functions
 function addPytorchCommand() {
   props.environment.pytorch.installCommands.push('')
-  nextTick(() => {
-    const newIndex = props.environment.pytorch.installCommands.length - 1
-    pytorchCommandsEditMode.value[newIndex] = true
-  })
 }
 
 function removePytorchCommand(index) {
@@ -267,10 +221,14 @@ function getFormattedCommands(commands, type, source) {
   return formatData.formatCommands(commands, type, source)
 }
 
-// Textarea auto-resize
-function autoResizeTextarea(textarea) {
-  textarea.style.height = 'auto'
-  textarea.style.height = textarea.scrollHeight + 'px'
+// Get placeholder text based on source
+function getSourcePlaceholder(type) {
+  if (type === 'pytorch') {
+    return props.environment.pytorch.source === 'official'
+      ? '例如: pip3 install torch torchvision torchaudio'
+      : '例如: pip3 install torch torchvision torchaudio -f https://mirror.aliyun.com/pypi/simple'
+  }
+  return '例如: pip install -r requirements.txt'
 }
 
 // Save environment
@@ -287,35 +245,6 @@ function saveEnvironment() {
   // Emit save event with environment data
   emit('save', props.environment)
 }
-
-// Watch for changes to resize textareas
-watch(
-  () => props.environment.pytorch.installCommands.concat(props.environment.pip.installCommands),
-  resizeAllTextareas,
-  { deep: true }
-)
-
-// Watch for changes to PyTorch commands length
-watch(
-  () => props.environment.pytorch.installCommands.length,
-  (newLength) => {
-    // Reset edit modes based on new command array length
-    const newEditModes = {}
-    for (let i = 0; i < newLength; i++) {
-      newEditModes[i] = pytorchCommandsEditMode.value[i] || false
-    }
-    pytorchCommandsEditMode.value = newEditModes
-  }
-)
-
-onMounted(() => {
-  resizeAllTextareas()
-
-  // Initialize PyTorch command edit modes
-  props.environment.pytorch.installCommands.forEach((_, index) => {
-    pytorchCommandsEditMode.value[index] = false
-  })
-})
 </script>
 
 <style scoped>
@@ -511,14 +440,15 @@ input[type='text'].error {
 .command-item {
   display: flex;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  align-items: flex-start;
 }
 
 .command-input-container {
   position: relative;
   display: flex;
   flex: 1;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 8px;
 }
 
@@ -612,6 +542,7 @@ input[type='text'].error {
   cursor: pointer;
   font-size: 16px;
   color: var(--color-text-light);
+  margin-top: 0;
 }
 
 .remove-button:hover {
@@ -664,24 +595,23 @@ input[type='text'].error {
 }
 
 .edit-command-button {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--color-text-light);
-  cursor: pointer;
-  opacity: 0.7;
-  padding: 4px;
-  font-size: 14px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  display: none;
 }
 
-.edit-command-button:hover {
-  opacity: 1;
-  background-color: var(--color-hover);
-  color: var(--color-primary);
+:deep(.editable-field-container) {
+  flex: 1;
+}
+
+:deep(.field-display) {
+  background-color: var(--color-background-secondary);
+}
+
+/* Remove unused styles */
+.command-textarea {
+  display: none;
+}
+
+.hidden {
+  display: none;
 }
 </style>
