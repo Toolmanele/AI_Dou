@@ -3,7 +3,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import SearchBar from '../components/appPage/SearchBar.vue'
 import TagSelector from '../components/appPage/TagSelector.vue'
 import AppList from '../components/appPage/AppList.vue'
-import AppCreationFlow from '../components/appPage/AppCreationFlow.vue'
 import AppInstallationModal from '../components/appPage/AppInstallationModal.vue'
 import BackgroundInstallationIndicator from '../components/appPage/BackgroundInstallationIndicator.vue'
 import { useAppCreateStore } from '../stores/appCreateStore'
@@ -211,8 +210,8 @@ const showConfigModal = ref(false)
 const currentAppConfig = ref(null)
 const configModalPosition = ref({ top: 0, left: 0, width: 0, height: 0 })
 
-// Add a ref for the AppCreationFlow component
-const appCreationFlowRef = ref(null)
+// Add a ref for the AppList component
+const appListRef = ref(null)
 
 // Function to open config modal
 const openConfigModal = (app, event) => {
@@ -317,14 +316,14 @@ const cloneApp = async (app, event) => {
   }
 }
 
-// New function to handle creating a new app
+// Update the openCreateAppModal function to use the appList ref
 const openCreateAppModal = () => {
   console.log('openCreateAppModal')
   appCreateStore.resetForm()
 
-  // Use the AppCreationFlow component
-  if (appCreationFlowRef.value) {
-    appCreationFlowRef.value.openAppCreation()
+  // Use the AppList component to access the AppCreationFlow
+  if (appListRef.value) {
+    appListRef.value.openCreateAppFlow()
   }
 }
 
@@ -346,6 +345,24 @@ const handleAppCreated = async (newApp) => {
   } catch (error) {
     console.error('Error handling app creation:', error)
     alert('应用创建出错，请重试')
+  }
+}
+
+// Update the handleAppUpdated function to match the expected signature
+const handleAppUpdated = async (updatedApp) => {
+  try {
+    console.log('handleAppUpdated 被调用:', updatedApp.name, '事件时间:', new Date().toISOString())
+
+    // Use appStore to update the app
+    await appStore.updateApp(updatedApp)
+
+    // Close the modal
+    closeConfigModal()
+
+    console.log('成功更新应用:', updatedApp.name)
+  } catch (error) {
+    console.error('Error updating app:', error)
+    alert('应用更新出错，请重试')
   }
 }
 
@@ -678,6 +695,7 @@ const handleBackgroundInstallation = () => {
         <!-- App List Component -->
         <AppList
           v-else
+          ref="appListRef"
           :apps="apps"
           :searchQuery="searchQuery"
           :selectedTags="selectedTags"
@@ -695,14 +713,7 @@ const handleBackgroundInstallation = () => {
 
     <!-- Configuration Modal -->
     <Teleport to="body">
-      <AppCreationFlow
-        ref="appCreationFlowRef"
-        :existing-app="currentAppConfig"
-        :is-editing="!!currentAppConfig"
-        @close="closeConfigModal"
-        @create="handleAppCreated"
-        @update="handleAppUpdated"
-      />
+      <!-- AppCreationFlow is now handled by the AppList component, so we remove it from here -->
     </Teleport>
 
     <!-- Installation Modal (使用新组件) -->

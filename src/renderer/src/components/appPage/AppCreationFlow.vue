@@ -8,8 +8,30 @@
     />
 
     <!-- App Creation Modal -->
-    <AppCreateModalPlus
-      v-if="showAppCreateModal"
+    <AppCreateModalPlusFolder
+      v-if="showAppCreateModal && store.appData.from === 'folder'"
+      :existingApp="existingApp"
+      :isEditing="isEditing"
+      @close="closeAppCreateModal"
+      @create="handleAppCreated"
+      @update="handleAppUpdated"
+      @openSettings="handleOpenSettings"
+    />
+
+    <!-- App Creation Modal -->
+    <AppCreateModalPlusGitHub
+      v-if="showAppCreateModal && store.appData.from === 'github'"
+      :existingApp="existingApp"
+      :isEditing="isEditing"
+      @close="closeAppCreateModal"
+      @create="handleAppCreated"
+      @update="handleAppUpdated"
+      @openSettings="handleOpenSettings"
+    />
+
+    <!-- App Creation Modal -->
+    <AppCreateModalPlusSeed
+      v-if="showAppCreateModal && store.appData.from === 'seed'"
       :existingApp="existingApp"
       :isEditing="isEditing"
       @close="closeAppCreateModal"
@@ -21,8 +43,15 @@
 </template>
 
 <script setup>
+console.log('AppCreationFlow Show')
 import { ref } from 'vue'
-import { AppCreateModalPlus, AppSourceSelectionModal } from './appcreatemodalplus'
+import {
+  AppCreateModalPlus,
+  AppSourceSelectionModal,
+  AppCreateModalPlusFolder,
+  AppCreateModalPlusGitHub,
+  AppCreateModalPlusSeed
+} from './appcreatemodalplus'
 import { useAppCreateStore } from '../../stores/appCreateStore'
 
 const store = useAppCreateStore()

@@ -151,7 +151,7 @@ const handleAddTagToFilter = (tag, event) => {
 }
 
 // 应用列表
-const showCreateModal = ref(false)
+// const showCreateModal = ref(false)
 const showConfigModal = ref(false)
 const currentEditApp = ref(null)
 
@@ -281,8 +281,9 @@ function editApp(app) {
 
 // 打开创建应用流程
 function openCreateAppFlow() {
-  if (this.$refs.appCreationFlow) {
-    this.$refs.appCreationFlow.openAppCreation()
+  const appCreationFlow = this.$refs.appCreationFlow
+  if (appCreationFlow) {
+    appCreationFlow.openAppCreation()
   }
 }
 
@@ -355,6 +356,11 @@ async function saveApps() {
     console.error('保存应用列表失败:', error)
   }
 }
+
+// Add defineExpose to make openCreateAppFlow available to parent components
+defineExpose({
+  openCreateAppFlow
+})
 </script>
 
 <template>

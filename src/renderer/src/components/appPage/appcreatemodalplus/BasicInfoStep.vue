@@ -1,16 +1,11 @@
 <template>
-  <div
-    id="step-0"
-    ref="stepRef"
-    class="step-form"
-    :class="{ active: isActive }"
-  >
+  <div id="step-0" ref="stepRef" class="step-form" :class="{ active: isActive }">
     <h3 class="step-title">基本信息</h3>
     <!-- Source Selection -->
     <div class="form-group">
       <label for="source-type">创建来源</label>
       <div class="source-selection">
-        <div class="source-options">
+        <!-- <div class="source-options">
           <div
             class="source-option"
             :class="{ selected: store.appData.from === 'folder' }"
@@ -46,7 +41,7 @@
               <div class="source-description">使用内置应用模板快速创建</div>
             </div>
           </div>
-        </div>
+        </div> -->
 
         <div v-if="store.appData.from" class="source-summary">
           <!-- Folder Source Summary -->
@@ -55,12 +50,10 @@
             <div class="summary-details">
               <div class="summary-title">从文件夹创建</div>
               <div class="summary-path">
-                {{ store.appData.folderPath || "未选择文件夹" }}
+                {{ store.appData.folderPath || '未选择文件夹' }}
               </div>
             </div>
-            <button class="change-button" @click="openSourceModal('folder')">
-              配置
-            </button>
+            <button class="change-button" @click="openSourceModal('folder')">配置</button>
           </div>
 
           <!-- GitHub Source Summary -->
@@ -72,9 +65,7 @@
                 {{ getGitSummary() }}
               </div>
             </div>
-            <button class="change-button" @click="openSourceModal('github')">
-              配置
-            </button>
+            <button class="change-button" @click="openSourceModal('github')">配置</button>
           </div>
 
           <!-- Seed Source Summary -->
@@ -83,12 +74,10 @@
             <div class="summary-details">
               <div class="summary-title">从模板创建</div>
               <div class="summary-path">
-                {{ store.selectedSeed?.name || "未选择模板" }}
+                {{ store.selectedSeed?.name || '未选择模板' }}
               </div>
             </div>
-            <button class="change-button" @click="openSourceModal('seed')">
-              配置
-            </button>
+            <button class="change-button" @click="openSourceModal('seed')">配置</button>
           </div>
         </div>
       </div>
@@ -99,15 +88,9 @@
       <label>GitHub 仓库地址</label>
       <div
         class="repo-list"
-        v-if="
-          store.appData.github.repos && store.appData.github.repos.length > 0
-        "
+        v-if="store.appData.github.repos && store.appData.github.repos.length > 0"
       >
-        <div
-          v-for="(repo, index) in store.appData.github.repos"
-          :key="index"
-          class="repo-item"
-        >
+        <div v-for="(repo, index) in store.appData.github.repos" :key="index" class="repo-item">
           <div class="repo-url">
             <span class="repo-icon">🔗</span>
             <span class="repo-link">{{ repo }}</span>
@@ -144,11 +127,7 @@
       <label for="app-tags">应用标签</label>
       <div class="tags-input-container">
         <div class="tags-container">
-          <div
-            v-for="tag in store.appData.tags"
-            :key="tag"
-            class="selected-tag"
-          >
+          <div v-for="tag in store.appData.tags" :key="tag" class="selected-tag">
             {{ tag }}
             <span class="tag-remove" @click="store.removeTag(tag)">×</span>
           </div>
@@ -163,9 +142,7 @@
               class="custom-tag-input"
             />
           </div>
-          <div v-else class="add-tag-button" @click="startAddCustomTag">
-            + 添加标签
-          </div>
+          <div v-else class="add-tag-button" @click="startAddCustomTag">+ 添加标签</div>
         </div>
       </div>
       <div class="predefined-tags">
@@ -204,112 +181,111 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from "vue";
-import { useAppCreateStore } from "../../../stores/appCreateStore";
-import FolderSourceModal from "./FolderSourceModal.vue";
-import GithubSourceModal from "./GithubSourceModal.vue";
-import SeedSourceModal from "./SeedSourceModal.vue";
+import { ref, nextTick, computed } from 'vue'
+import { useAppCreateStore } from '../../../stores/appCreateStore'
+import FolderSourceModal from './FolderSourceModal.vue'
+import GithubSourceModal from './GithubSourceModal.vue'
+import SeedSourceModal from './SeedSourceModal.vue'
 
 const props = defineProps({
   isActive: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
 // Use the Pinia store
-const store = useAppCreateStore();
+const store = useAppCreateStore()
 
-const emit = defineEmits(["browse-directory"]);
+const emit = defineEmits(['browse-directory'])
 
-const stepRef = ref(null);
-const isAddingCustomTag = ref(false);
-const customTag = ref("");
-const customTagInput = ref(null);
-const showFolderModal = ref(false);
-const showGithubModal = ref(false);
-const showSeedModal = ref(false);
+const stepRef = ref(null)
+const isAddingCustomTag = ref(false)
+const customTag = ref('')
+const customTagInput = ref(null)
+const showFolderModal = ref(false)
+const showGithubModal = ref(false)
+const showSeedModal = ref(false)
 
 // Available tags
 const availableTags = [
-  "文本生成",
-  "图像生成",
-  "翻译",
-  "代码助手",
-  "聊天机器人",
-  "数据分析",
-  "知识库",
-  "音频处理",
-  "视频处理",
-  "自动化工具",
-];
+  '文本生成',
+  '图像生成',
+  '翻译',
+  '代码助手',
+  '聊天机器人',
+  '数据分析',
+  '知识库',
+  '音频处理',
+  '视频处理',
+  '自动化工具'
+]
 
 function startAddCustomTag() {
-  isAddingCustomTag.value = true;
+  isAddingCustomTag.value = true
   nextTick(() => {
     if (customTagInput.value) {
-      customTagInput.value.focus();
+      customTagInput.value.focus()
     }
-  });
+  })
 }
 
 function addCustomTag() {
-  const tag = customTag.value.trim();
+  const tag = customTag.value.trim()
   if (tag) {
-    store.addTag(tag);
-    customTag.value = "";
+    store.addTag(tag)
+    customTag.value = ''
   }
 }
 
 function finishAddTag() {
   if (customTag.value.trim()) {
-    addCustomTag();
+    addCustomTag()
   }
-  isAddingCustomTag.value = false;
+  isAddingCustomTag.value = false
 }
 
 // Open source modal
 function openSourceModal(source) {
-  store.selectSource(source);
+  store.selectSource(source)
 
-  if (source === "folder") {
-    showFolderModal.value = true;
-  } else if (source === "github") {
-    showGithubModal.value = true;
-  } else if (source === "seed") {
-    showSeedModal.value = true;
+  if (source === 'folder') {
+    showFolderModal.value = true
+  } else if (source === 'github') {
+    showGithubModal.value = true
+  } else if (source === 'seed') {
+    showSeedModal.value = true
   }
 }
 
 function selectSource(source) {
-  store.selectSource(source);
+  store.selectSource(source)
 }
 
 // Handle folder directory browsing
 async function handleBrowseDirectory(directory) {
-  const result = await emit("browse-directory", directory);
-  return result;
+  const result = await emit('browse-directory', directory)
+  return result
 }
 
 // Public method to set selected seed (used by parent)
 function setSelectedSeed(seed) {
-  store.selectedSeed = seed;
+  store.selectedSeed = seed
 }
 
 // Expose functions and refs to parent component
 defineExpose({
   stepRef,
-  setSelectedSeed,
-});
+  setSelectedSeed
+})
 
 function getGitSummary() {
-  const github = store.appData.github;
+  const github = store.appData.github
   if (github.repos && github.repos.length > 0) {
-    const defaultRepo =
-      github.repos.find((repo) => repo.isDefault) || github.repos[0];
-    return defaultRepo.url;
+    const defaultRepo = github.repos.find((repo) => repo.isDefault) || github.repos[0]
+    return defaultRepo.url
   }
-  return github.repoUrl || "未设置仓库地址";
+  return github.repoUrl || '未设置仓库地址'
 }
 </script>
 

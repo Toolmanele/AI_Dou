@@ -453,50 +453,18 @@ export const useAppCreateStore = defineStore('appCreate', () => {
   }
 
   function setAppDataFromGithub(githubUrl) {
-    // Save current data to appropriate temp storage based on current source
-    if (appData.from === 'folder') {
-      // Save folder data to folderTemp
-      folderTemp.folderPath = appData.folderPath
-      folderTemp.name = appData.name
-      folderTemp.description = appData.description
-      folderTemp.tags = [...appData.tags]
-      folderTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
-    } else if (appData.from === 'seed') {
-      // Save seed data to seedTemp
-      seedTemp.seed = appData.seedData
-      seedTemp.name = appData.name
-      seedTemp.description = appData.description
-      seedTemp.tags = [...appData.tags]
-      seedTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
+    // Start with template data
+    Object.assign(appData, { ...appDataTemplate })
+    appData.from = 'github'
+
+    // If a URL was provided, use it
+    if (githubUrl) {
+      setAppByGithub(githubUrl)
     }
 
-    // Check if we have saved GitHub data
-    if (githubTemp.name && githubTemp.github.repos.length > 0) {
-      // Restore from saved Github temp data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'github'
-      appData.name = githubTemp.name
-      appData.description = githubTemp.description || ''
-      appData.tags = githubTemp.tags || []
-      appData.github.repos = [...githubTemp.github.repos]
-      if (githubTemp.pythonEnvironments) {
-        appData.pythonEnvironments = JSON.parse(JSON.stringify(githubTemp.pythonEnvironments))
-      }
-    } else {
-      // Start with template data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'github'
+    appData.createdAt = new Date().toISOString()
 
-      // If a URL was provided, use it
-      if (githubUrl) {
-        setAppByGithub(githubUrl)
-      }
-    }
-
-    // Set creation date if it's a new app
-    if (!appData.createdAt) {
-      appData.createdAt = new Date().toISOString()
-    }
+    console.log('appData', appData)
   }
 
   function setAppByGithub(githubUrl) {
@@ -524,50 +492,15 @@ export const useAppCreateStore = defineStore('appCreate', () => {
   }
 
   function setAppDataFromFolder(folderPath) {
-    // Save current data to appropriate temp storage based on current source
-    if (appData.from === 'github') {
-      // Save github data to githubTemp
-      githubTemp.name = appData.name
-      githubTemp.description = appData.description
-      githubTemp.tags = [...appData.tags]
-      githubTemp.github.repos = [...appData.github.repos]
-      githubTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
-    } else if (appData.from === 'seed') {
-      // Save seed data to seedTemp
-      seedTemp.seed = appData.seedData
-      seedTemp.name = appData.name
-      seedTemp.description = appData.description
-      seedTemp.tags = [...appData.tags]
-      seedTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
-    }
+    // Start with template data
+    Object.assign(appData, { ...appDataTemplate })
+    appData.from = 'folder'
 
-    // Check if we have saved folder data
-    if (folderTemp.folderPath) {
-      // Restore from saved folder temp data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'folder'
-      appData.name = folderTemp.name || ''
-      appData.description = folderTemp.description || ''
-      appData.tags = folderTemp.tags || []
-      appData.folderPath = folderTemp.folderPath
-      if (folderTemp.pythonEnvironments) {
-        appData.pythonEnvironments = JSON.parse(JSON.stringify(folderTemp.pythonEnvironments))
-      }
-    } else {
-      // Start with template data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'folder'
-
-      // If a folder path was provided, use it
-      if (folderPath) {
-        setAppByFolder(folderPath)
-      }
+    // If a folder path was provided, use it
+    if (folderPath) {
+      setAppByFolder(folderPath)
     }
-
-    // Set creation date if it's a new app
-    if (!appData.createdAt) {
-      appData.createdAt = new Date().toISOString()
-    }
+    appData.createdAt = new Date().toISOString()
   }
 
   function setAppByFolder(folderPath) {
@@ -585,146 +518,270 @@ export const useAppCreateStore = defineStore('appCreate', () => {
       console.error('Error parsing folder path:', error)
     }
   }
+  function setAppDataFromSeed(seed) {
+    Object.assign(appData, { ...appDataTemplate })
+    appData.from = 'seed'
+    if (seed) {
+      setAppBySeed(seed)
+    }
+    appData.createdAt = new Date().toISOString()
+  }
+  async function setAppBySeed(seed) {
+    Object.assign(appData, { ...appDataTemplate })
+    console.log('seed', seed)
+    if (!seed) return
 
-  // 从种子数据直接设置应用数据
-  async function setAppDataFromSeed(seed) {
-    // Save current data to appropriate temp storage based on current source
-    if (appData.from === 'github') {
-      // Save github data to githubTemp
-      githubTemp.name = appData.name
-      githubTemp.description = appData.description
-      githubTemp.tags = [...appData.tags]
-      githubTemp.github.repos = [...appData.github.repos]
-      githubTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
-    } else if (appData.from === 'folder') {
-      // Save folder data to folderTemp
-      folderTemp.folderPath = appData.folderPath
-      folderTemp.name = appData.name
-      folderTemp.description = appData.description
-      folderTemp.tags = [...appData.tags]
-      folderTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
+    // 设置来源为种子
+    appData.from = 'seed'
+    selectedSeed.value = seed
+    appData.seedData = seed
+    appData.folderPath = await window.electronAPI.getAppFolderPath(seed.name)
+
+    // 设置基本信息
+    if (seed.name && !appData.name) {
+      appData.name = seed.name
     }
 
-    // Check if we have saved seed data for this seed
-    if (seedTemp.seed && (!seed || seedTemp.seed.id === seed.id)) {
-      // Restore from saved seed temp data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'seed'
-      appData.name = seedTemp.name || ''
-      appData.description = seedTemp.description || ''
-      appData.tags = seedTemp.tags || []
-      appData.seedData = seedTemp.seed
-      selectedSeed.value = seedTemp.seed
-      if (seedTemp.pythonEnvironments) {
-        appData.pythonEnvironments = JSON.parse(JSON.stringify(seedTemp.pythonEnvironments))
+    if (seed.description && !appData.description) {
+      appData.description = seed.description
+    }
+
+    // 添加标签
+    if (seed.tags && seed.tags.length > 0 && appData.tags.length === 0) {
+      appData.tags = [...seed.tags]
+    }
+
+    // 设置Python环境信息
+    if (seed.pytorch?.installCommands && seed.pytorch.installCommands.length > 0) {
+      // 检测系统类型和GPU信息
+      let systemInfo = {
+        platform: 'unknown',
+        gpu: 'unknown',
+        hasNvidia: false,
+        hasAMD: false,
+        hasIntel: false
       }
 
-      // Also restore Github repos if they exist
-      if (seedTemp.github?.repos?.length > 0) {
-        appData.github.repos = [...seedTemp.github.repos]
-      }
-
-      // If original folderPath exists, restore it
-      if (seedTemp.folderPath) {
-        appData.folderPath = seedTemp.folderPath
-      }
-    } else if (seed) {
-      // No saved data for this seed, or a new seed was provided
-      // Start with template data and process the new seed
-      Object.assign(appData, { ...appDataTemplate })
-
-      console.log('seed', seed)
-      // 设置来源为种子
-      appData.from = 'seed'
-      selectedSeed.value = seed
-      appData.seedData = seed
-
+      // 尝试从后端获取系统信息
       try {
-        appData.folderPath = await window.electronAPI.getAppFolderPath(seed.name)
-        // Save this to seedTemp for future use
-        seedTemp.folderPath = appData.folderPath
-      } catch (error) {
-        console.error('Error getting app folder path:', error)
-      }
+        // 使用 window.electronAPI 获取系统信息
+        if (window.electronAPI && window.electronAPI.getGpuOsInfo) {
+          // 使用异步函数获取系统信息
+          const info = await window.electronAPI.getGpuOsInfo()
+          console.log('info', info)
 
-      // 设置基本信息
-      if (seed.name && !appData.name) {
-        appData.name = seed.name
-      }
-
-      if (seed.description && !appData.description) {
-        appData.description = seed.description
-      }
-
-      // 添加标签
-      if (seed.tags && seed.tags.length > 0 && appData.tags.length === 0) {
-        appData.tags = [...seed.tags]
-      }
-
-      // 设置Python环境信息
-      if (seed.pytorch?.installCommands && seed.pytorch.installCommands.length > 0) {
-        // Rest of existing seed processing code
-        // ... existing code for system detection and command processing ...
-
-        // 检测系统类型和GPU信息
-        let systemInfo = {
-          platform: 'unknown',
-          gpu: 'unknown',
-          hasNvidia: false,
-          hasAMD: false,
-          hasIntel: false
-        }
-
-        // 尝试从后端获取系统信息
-        try {
-          // 使用 window.electronAPI 获取系统信息
-          if (window.electronAPI && window.electronAPI.getGpuOsInfo) {
-            // 使用异步函数获取系统信息
-            const info = await window.electronAPI.getGpuOsInfo()
-            console.log('info', info)
-
-            systemInfo = {
-              platform: info.platform || 'unknown', // "win32", "darwin", "linux"
-              gpu: info.gpuType || 'unknown',
-              hasNvidia: info.hasNvidia || false,
-              hasAMD: info.hasAMD || false,
-              hasIntel: info.hasIntel || false
-            }
-
-            // 处理安装命令
-            processInstallCommands(seed, systemInfo)
-          } else {
-            // 回退到浏览器检测
-            fallbackSystemDetection(seed)
+          systemInfo = {
+            platform: info.platform || 'unknown', // "win32", "darwin", "linux"
+            gpu: info.gpuType || 'unknown',
+            hasNvidia: info.hasNvidia || false,
+            hasAMD: info.hasAMD || false,
+            hasIntel: info.hasIntel || false
           }
-        } catch (error) {
-          console.error('获取系统信息失败:', error)
+
+          // 处理安装命令
+          processInstallCommands(seed, systemInfo)
+        } else {
           // 回退到浏览器检测
           fallbackSystemDetection(seed)
         }
+      } catch (error) {
+        console.error('获取系统信息失败:', error)
+        // 回退到浏览器检测
+        fallbackSystemDetection(seed)
       }
-
-      // Save the processed seed data to seedTemp for future use
-      seedTemp.seed = seed
-      seedTemp.name = appData.name
-      seedTemp.description = appData.description
-      seedTemp.tags = [...appData.tags]
-      seedTemp.pythonEnvironments = JSON.parse(JSON.stringify(appData.pythonEnvironments))
-      if (appData.github?.repos?.length > 0) {
-        seedTemp.github = { repos: [...appData.github.repos] }
-      }
-    } else {
-      // No seed provided and no saved seed data
-      Object.assign(appData, { ...appDataTemplate })
-      appData.from = 'seed'
-    }
-
-    // Set creation date if it's a new app
-    if (!appData.createdAt) {
-      appData.createdAt = new Date().toISOString()
     }
 
     console.log('appData', appData)
+    // 处理安装命令的函数
+    function processInstallCommands(seed, systemInfo) {
+      // 创建默认的Python环境
+      const defaultEnv = {
+        pythonVersion: seed.python || '3.10',
+        startCommand: seed.launch_command?.[0] || 'python main.py',
+        isInstalled: false,
+        isDefault: true,
+        isCollapsed: false,
+        isInstalling: false,
+        installProgress: 0,
+        installLogs: [],
+        installError: '',
+        needConfigAppSpace: false,
+        showLogs: false,
+        pythonPath: '',
+        pytorch: {
+          source: seed.pytorch?.source || '',
+          installCommands: []
+        },
+        pip: {
+          source: seed.pip?.source || '',
+          installCommands: []
+        }
+      }
+
+      // 处理PyTorch安装命令
+      if (seed.pytorch?.installCommands && seed.pytorch.installCommands.length > 0) {
+        let selectedCommand = 'pip install torch torchvision torchaudio'
+
+        // 根据系统平台和GPU类型选择安装命令
+        if (systemInfo.platform === 'win32' || systemInfo.platform === 'Windows') {
+          if (systemInfo.hasNvidia) {
+            // 查找NVIDIA命令
+            const nvidiaCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'nvidia' || cmd.name === 'cuda'
+            )
+            if (nvidiaCommand) {
+              selectedCommand = nvidiaCommand.value
+            }
+          } else if (systemInfo.hasAMD) {
+            // 查找AMD Windows命令
+            const amdCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'amd-windows' || cmd.name === 'directml'
+            )
+            if (amdCommand) {
+              selectedCommand = amdCommand.value
+            }
+          } else if (systemInfo.hasIntel) {
+            // 查找Intel命令
+            const intelCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'xpu' || cmd.name === 'intel'
+            )
+            if (intelCommand) {
+              selectedCommand = intelCommand.value
+            }
+          } else {
+            // 默认CPU版本
+            const cpuCommand = seed.pytorch.installCommands.find((cmd) => cmd.name === 'cpu')
+            if (cpuCommand) {
+              selectedCommand = cpuCommand.value
+            }
+          }
+        } else if (systemInfo.platform === 'linux') {
+          if (systemInfo.hasNvidia) {
+            // 查找NVIDIA命令
+            const nvidiaCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'nvidia' || cmd.name === 'cuda'
+            )
+            if (nvidiaCommand) {
+              selectedCommand = nvidiaCommand.value
+            }
+          } else if (systemInfo.hasAMD) {
+            // 查找AMD Linux命令
+            const amdCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'amd-linux' || cmd.name === 'rocm'
+            )
+            if (amdCommand) {
+              selectedCommand = amdCommand.value
+            }
+          } else if (systemInfo.hasIntel) {
+            // 查找Intel命令
+            const intelCommand = seed.pytorch.installCommands.find(
+              (cmd) => cmd.name === 'xpu' || cmd.name === 'intel'
+            )
+            if (intelCommand) {
+              selectedCommand = intelCommand.value
+            }
+          } else {
+            // 默认CPU版本
+            const cpuCommand = seed.pytorch.installCommands.find((cmd) => cmd.name === 'cpu')
+            if (cpuCommand) {
+              selectedCommand = cpuCommand.value
+            }
+          }
+        } else if (systemInfo.platform === 'darwin' || systemInfo.platform === 'Mac') {
+          // Mac通常使用CPU版本
+          const cpuCommand = seed.pytorch.installCommands.find(
+            (cmd) => cmd.name === 'cpu' || cmd.name === 'mac'
+          )
+          if (cpuCommand) {
+            selectedCommand = cpuCommand.value
+          }
+        } else {
+          // 未知平台，使用默认命令
+          const cpuCommand = seed.pytorch.installCommands.find((cmd) => cmd.name === 'cpu')
+          if (cpuCommand) {
+            selectedCommand = cpuCommand.value
+          }
+        }
+
+        defaultEnv.pytorch.installCommands = [selectedCommand]
+      }
+
+      // 处理pip安装命令
+      if (seed.pip?.installCommands && seed.pip.installCommands.length > 0) {
+        defaultEnv.pip.installCommands = seed.pip.installCommands
+      }
+
+      // 设置环境
+      appData.pythonEnvironments = [defaultEnv]
+
+      // 设置模型和输出目录
+      if (seed.modelsFolder) {
+        appData.modelDir = seed.modelsFolder
+      }
+
+      if (seed.outputFolder) {
+        appData.outputDir = seed.outputFolder
+      }
+
+      // 设置GitHub信息
+      if (seed.github?.repos && seed.github.repos.length > 0) {
+        appData.github = {
+          repos: seed.github.repos
+        }
+      }
+    }
+
+    // 回退到浏览器检测
+    function fallbackSystemDetection(seed) {
+      // 检测系统类型
+      const userAgent = navigator.userAgent.toLowerCase()
+      let platform = 'unknown'
+
+      if (userAgent.includes('windows')) {
+        platform = 'win32'
+      } else if (userAgent.includes('mac')) {
+        platform = 'darwin'
+      } else if (userAgent.includes('linux')) {
+        platform = 'linux'
+      }
+
+      // 尝试检测GPU
+      let hasNvidia = false
+      let hasAMD = false
+      let hasIntel = false
+
+      if (window.WebGLRenderingContext) {
+        const canvas = document.createElement('canvas')
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+        if (gl) {
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+          if (debugInfo) {
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+            if (renderer.toLowerCase().includes('nvidia')) {
+              hasNvidia = true
+            } else if (
+              renderer.toLowerCase().includes('amd') ||
+              renderer.toLowerCase().includes('radeon')
+            ) {
+              hasAMD = true
+            } else if (renderer.toLowerCase().includes('intel')) {
+              hasIntel = true
+            }
+          }
+        }
+      }
+
+      const systemInfo = {
+        platform: platform,
+        gpu: hasNvidia ? 'nvidia' : hasAMD ? 'amd' : hasIntel ? 'intel' : 'unknown',
+        hasNvidia: hasNvidia,
+        hasAMD: hasAMD,
+        hasIntel: hasIntel
+      }
+
+      // 处理安装命令
+      processInstallCommands(seed, systemInfo)
+    }
   }
 
   return {
