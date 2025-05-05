@@ -4,12 +4,13 @@
     <!-- Source Selection -->
     <div class="form-group">
       <div class="form-group">
-        <label>文件夹路径 <span class="required">*</span></label>
+        <field-hint hint="选择本地应用代码文件夹" position="right">
+          文件夹路径 <span class="required">*</span>
+        </field-hint>
         <div class="folder-path-input">
           <input type="text" v-model="folderPath" placeholder="应用文件夹路径" readonly />
           <button class="browse-button" @click="browseFolder">浏览...</button>
         </div>
-        <div class="source-hint">选择包含应用代码的本地文件夹</div>
       </div>
     </div>
   </div>
@@ -18,6 +19,7 @@
 <script setup>
 import { ref, nextTick, computed } from 'vue'
 import { useAppCreateStore } from '@stores/appCreateStore'
+import { FieldHint } from '@common'
 
 const props = defineProps({
   isActive: {
@@ -38,6 +40,7 @@ const customTagInput = ref(null)
 const showFolderModal = ref(false)
 const showGithubModal = ref(false)
 const showSeedModal = ref(false)
+const folderPath = computed(() => store.appData.folderPath || '')
 
 // Available tags
 const availableTags = [
@@ -96,8 +99,8 @@ function selectSource(source) {
 }
 
 // Handle folder directory browsing
-async function handleBrowseDirectory(directory) {
-  const result = await emit('browse-directory', directory)
+async function browseFolder() {
+  const result = await emit('browse-directory', 'folder')
   return result
 }
 
@@ -572,12 +575,6 @@ input:focus {
 
 .browse-button:hover {
   background-color: var(--color-primary-dark);
-}
-
-.source-hint {
-  font-size: 12px;
-  color: var(--color-text-light);
-  margin-top: 8px;
 }
 
 .folder-selection-info {

@@ -1,32 +1,22 @@
 <template>
   <div id="step-3" ref="stepRef" class="step-form" :class="{ active: isActive }">
-    <h3 class="step-title">Python 环境</h3>
-
-    <!-- Move the environment creation options to the top -->
-    <div class="environment-options">
-      <div class="option-card">
-        <div class="option-icon">+</div>
-        <div class="option-content">
-          <h4 class="option-title">自动创建环境</h4>
-          <p class="option-description">创建新的 Python 环境并自动配置</p>
-          <button class="option-button" @click="addEnvironment">+ 添加环境</button>
-        </div>
-      </div>
-
-      <div class="option-card">
-        <div class="option-icon">📂</div>
-        <div class="option-content">
-          <h4 class="option-title">从文件夹导入环境</h4>
-          <p class="option-description">导入已有的 Python 环境文件夹</p>
-          <button class="option-button" @click="showImportModal = true">选择文件夹</button>
-        </div>
+    <div class="step-header">
+      <field-hint
+        hint="可以添加多个Python环境，适用于不同场景；默认环境将在应用启动时使用；安装命令按顺序执行，通常先安装依赖再启动应用；如果环境尚未安装，可以点击安装按钮自动配置"
+        position="right"
+      >
+        <h3 class="step-title">Python 环境</h3>
+      </field-hint>
+      <div class="header-actions">
+        <button class="action-button" @click="addEnvironment">+ 添加环境</button>
+        <button class="action-button" @click="showImportModal = true">
+          <span class="import-icon">📂</span> 导入环境
+        </button>
       </div>
     </div>
 
     <!-- Existing environments list -->
     <div v-if="store.appData.pythonEnvironments.length > 0" class="environments-list">
-      <h4 class="environments-title">已配置环境</h4>
-
       <div class="environment-list-table">
         <div class="environment-list-header">
           <div class="env-col env-status">状态</div>
@@ -147,16 +137,6 @@
       @close="closeEnvModal"
       @save="saveEnvironment"
     />
-
-    <div class="python-tips">
-      <h4>Python 环境提示：</h4>
-      <ul>
-        <li>可以添加多个 Python 环境，适用于不同场景</li>
-        <li>默认环境将在应用启动时使用</li>
-        <li>安装命令按顺序执行，通常先安装依赖再启动应用</li>
-        <li>如果环境尚未安装，可以点击"安装"按钮自动配置</li>
-      </ul>
-    </div>
   </div>
 </template>
 
@@ -165,6 +145,7 @@ import { ref } from 'vue'
 import { useAppCreateStore } from '@stores/appCreateStore'
 import formatData from '@services/formatData'
 import PythonEnvironmentModal from '../PythonEnvironmentModal.vue'
+import { FieldHint } from '@common'
 
 const props = defineProps({
   isActive: {
@@ -338,12 +319,6 @@ async function browsePythonFolder() {
       // 如果用户选择了目录
       if (result && !result.canceled && result.filePaths && result.filePaths.length > 0) {
         const selectedPath = result.filePaths[0]
-        // store.appData[directory] = selectedPath
-
-        // // If it's the working directory, update the folderPath in the store
-        // if (directory === 'workingDir') {
-        //   store.setFolderPath(selectedPath)
-        // }
         importPath.value = selectedPath
         console.log(`已选择${directory}:`, selectedPath)
         let detectResult = await detectPythonEnvironment(selectedPath)
@@ -498,89 +473,48 @@ defineExpose({
   margin-left: -20px;
   margin-right: -20px;
 }
-.step-title {
-  padding-bottom: 5px;
-  margin-bottom: 10px;
-  /* border-bottom: 1px solid var(--color-border); */
-}
-.environment-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 30px;
-}
 
-.option-card {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 20px;
-  background-color: var(--color-background-secondary);
+.step-header {
   display: flex;
-  gap: 16px;
-  transition: all 0.2s ease;
-}
-
-.option-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: var(--color-primary-light);
-}
-
-.option-icon {
-  font-size: 24px;
-  width: 48px;
-  height: 48px;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  background-color: var(--color-background);
-  border-radius: 50%;
-  border: 1px solid var(--color-border);
+  margin-bottom: 20px;
 }
 
-.option-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.option-title {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+.step-title {
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
   color: var(--color-text-strong);
 }
 
-.option-description {
-  margin: 0 0 16px 0;
-  font-size: 14px;
-  color: var(--color-text);
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 
-.option-button {
-  align-self: flex-start;
-  padding: 8px 16px;
+.action-button {
+  padding: 6px 12px;
+  border-radius: 4px;
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
   color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.option-button:hover {
+.action-button:hover {
   background-color: var(--color-hover);
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-light);
   color: var(--color-primary);
 }
 
-.environments-title {
-  margin: 0 0 16px 0;
+.import-icon {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-strong);
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-border);
 }
 
 .environments-list {
@@ -696,31 +630,6 @@ defineExpose({
 .delete-btn {
   color: #e53e3e;
   border-color: #e53e3e;
-}
-
-.python-tips {
-  background-color: var(--color-background-secondary);
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 20px;
-}
-
-.python-tips h4 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: var(--color-text-strong);
-}
-
-.python-tips ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.python-tips li {
-  margin-bottom: 6px;
-  font-size: 13px;
-  color: var(--color-text);
 }
 
 /* Import modal styles */
