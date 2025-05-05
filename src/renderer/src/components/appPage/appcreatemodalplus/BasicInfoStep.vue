@@ -101,28 +101,12 @@
 
     <div class="form-group">
       <label for="app-name">应用名称 <span class="required">*</span></label>
-      <div class="edit-field-container">
-        <template v-if="isNameEditing">
-          <input
-            id="app-name"
-            v-model="tempName"
-            type="text"
-            placeholder="给你的应用起个名字"
-            :class="{ error: store.errors.name }"
-            style="width: 100%"
-          />
-          <div class="edit-actions">
-            <button class="edit-btn save" @click="saveNameEdit" title="保存">✓</button>
-            <button class="edit-btn cancel" @click="cancelNameEdit" title="取消">✕</button>
-          </div>
-        </template>
-        <template v-else>
-          <div class="field-display">
-            <span class="field-value">{{ store.appData.name || '未设置' }}</span>
-            <button class="edit-btn" @click="startEditingName" title="编辑">✎</button>
-          </div>
-        </template>
-      </div>
+      <EditableField
+        v-model="store.appData.name"
+        placeholder="给你的应用起个名字"
+        :error="store.errors.name"
+        emptyText="未设置"
+      />
       <div v-if="store.errors.name" class="error-message">
         {{ store.errors.name }}
       </div>
@@ -130,29 +114,13 @@
 
     <div class="form-group">
       <label for="app-description">应用描述</label>
-      <div class="edit-field-container">
-        <template v-if="isDescriptionEditing">
-          <textarea
-            id="app-description"
-            v-model="tempDescription"
-            placeholder="描述一下这个应用的功能和用途"
-            rows="3"
-            style="width: 100%"
-          ></textarea>
-          <div class="edit-actions">
-            <button class="edit-btn save" @click="saveDescriptionEdit" title="保存">✓</button>
-            <button class="edit-btn cancel" @click="cancelDescriptionEdit" title="取消">✕</button>
-          </div>
-        </template>
-        <template v-else>
-          <div class="field-display">
-            <span class="field-value description">{{
-              store.appData.description || '未设置描述'
-            }}</span>
-            <button class="edit-btn" @click="startEditingDescription" title="编辑">✎</button>
-          </div>
-        </template>
-      </div>
+      <EditableField
+        v-model="store.appData.description"
+        inputType="textarea"
+        placeholder="描述一下这个应用的功能和用途"
+        rows="3"
+        emptyText="未设置描述"
+      />
     </div>
 
     <div class="form-group">
@@ -218,6 +186,7 @@ import { useAppCreateStore } from '../../../stores/appCreateStore'
 import FolderSourceModal from './FolderSourceModal.vue'
 import GithubSourceModal from './GithubSourceModal.vue'
 import SeedSourceModal from './SeedSourceModal.vue'
+import { EditableField } from '../../../components/common'
 
 const props = defineProps({
   isActive: {
@@ -253,46 +222,7 @@ const availableTags = [
   '自动化工具'
 ]
 
-// First, add the editing state variables in the script section
-// Find the script setup section and add these variables after the imports
-const isNameEditing = ref(false)
-const isDescriptionEditing = ref(false)
-
-// Add temporary storage for the values while editing
-const tempName = ref('')
-const tempDescription = ref('')
-
-// Add functions to handle editing
-function startEditingName() {
-  tempName.value = store.appData.name
-  isNameEditing.value = true
-}
-
-function saveNameEdit() {
-  if (tempName.value.trim()) {
-    store.appData.name = tempName.value
-    isNameEditing.value = false
-  }
-}
-
-function cancelNameEdit() {
-  isNameEditing.value = false
-}
-
-function startEditingDescription() {
-  tempDescription.value = store.appData.description
-  isDescriptionEditing.value = true
-}
-
-function saveDescriptionEdit() {
-  store.appData.description = tempDescription.value
-  isDescriptionEditing.value = false
-}
-
-function cancelDescriptionEdit() {
-  isDescriptionEditing.value = false
-}
-
+// Add functions to handle tag management
 function startAddCustomTag() {
   isAddingCustomTag.value = true
   nextTick(() => {
