@@ -74,13 +74,13 @@ export async function createApp(event, app) {
     const githubRepos = app.github?.repos || []
     if (githubRepos.length > 0) {
       // 确保repos目录存在
-      const reposDir = await checkUniqueDir(path.join(appSpace, 'apps'), app.name)
+      // const reposDir = await checkUniqueDir(path.join(appSpace, 'apps'), app.name)
       // 这里传入的 app.folderPath 不是完整版的，需要拼接,只能是一个文件夹的名称
       // const reposDir = path.join(appSpace, 'apps', app.folderPath)
-      if (!fs.existsSync(reposDir)) {
-        fs.mkdirSync(reposDir, { recursive: true })
-      }
-      console.log('reposDir', reposDir)
+      // if (!fs.existsSync(reposDir)) {
+      //   fs.mkdirSync(reposDir, { recursive: true })
+      // }
+      // console.log('reposDir', reposDir)
       let fastestMirrorUrlResult = await findFastestUrl(githubRepos)
       console.log('fastestMirrorUrlResult', fastestMirrorUrlResult)
       let fastestMirrorUrl = fastestMirrorUrlResult.url
@@ -95,31 +95,14 @@ export async function createApp(event, app) {
         status: 'info',
         message: `开始下载仓库: ${fastestMirrorUrl}`
       })
-
+      const reposDirBasename = path.join(appSpace, 'apps')
+      const reposDir = await checkUniqueDir(reposDirBasename, app.name)
       // 使用 reposDir 的 basename 作为仓库名称
-      const reposDirBasename = path.basename(reposDir)
-
       // 获取 reposDir 的父目录，作为 git clone 的目标目录
-      const parentDir = path.dirname(reposDir)
 
-      // 检查目标目录是否存在，如果不存在则创建
-      if (!fs.existsSync(parentDir)) {
-        fs.mkdirSync(parentDir, { recursive: true })
-      }
+      const finalRepoName = path.basename(reposDir)
 
-      // 检查同名目录是否已存在，如果存在则添加时间戳
-      let finalRepoName = reposDirBasename
-      if (fs.existsSync(path.join(parentDir, finalRepoName))) {
-        const timestamp = Date.now().toString().slice(-6)
-        finalRepoName = `${finalRepoName}-${timestamp}`
-
-        progressCallback({
-          status: 'info',
-          message: `目标目录已存在，将使用新名称: ${finalRepoName}`
-        })
-      }
-
-      const cloneResult = await git.clone(parentDir, fastestMirrorUrl, finalRepoName, {
+      const cloneResult = await git.clone(reposDirBasename, fastestMirrorUrl, finalRepoName, {
         mirror: fastestMirrorUrl,
         depth: 1,
         progressCallback

@@ -1,6 +1,6 @@
 <!-- AppCreateModalPlus.vue - Main import wrapper file -->
 <script>
-import { AppCreateModalPlus } from "./appcreatemodalplus";
+import { AppCreateModalPlus } from './appcreatemodalplus'
 
-export default AppCreateModalPlus;
+export default AppCreateModalPlus
 </script>

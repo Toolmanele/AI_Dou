@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import SearchBar from '../components/appPage/SearchBar.vue'
 import TagSelector from '../components/appPage/TagSelector.vue'
 import AppList from '../components/appPage/AppList.vue'
-import ConfigModal from '../components/appPage/AppCreateModal.vue'
+import AppCreationFlow from '../components/appPage/AppCreationFlow.vue'
 import AppInstallationModal from '../components/appPage/AppInstallationModal.vue'
 import BackgroundInstallationIndicator from '../components/appPage/BackgroundInstallationIndicator.vue'
 import { useAppCreateStore } from '../stores/appCreateStore'
@@ -211,6 +211,9 @@ const showConfigModal = ref(false)
 const currentAppConfig = ref(null)
 const configModalPosition = ref({ top: 0, left: 0, width: 0, height: 0 })
 
+// Add a ref for the AppCreationFlow component
+const appCreationFlowRef = ref(null)
+
 // Function to open config modal
 const openConfigModal = (app, event) => {
   // Store the current app to be configured
@@ -318,22 +321,11 @@ const cloneApp = async (app, event) => {
 const openCreateAppModal = () => {
   console.log('openCreateAppModal')
   appCreateStore.resetForm()
-  // Set the modal position to center of viewport
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
 
-  configModalPosition.value = {
-    top: viewportHeight / 2 - 300,
-    left: viewportWidth / 2 - 400,
-    width: 800,
-    height: 600
+  // Use the AppCreationFlow component
+  if (appCreationFlowRef.value) {
+    appCreationFlowRef.value.openAppCreation()
   }
-
-  // Show the modal
-  showConfigModal.value = true
-
-  // Prevent body scrolling when modal is open
-  document.body.style.overflow = 'hidden'
 }
 
 // 处理应用创建
@@ -343,7 +335,7 @@ const handleAppCreated = async (newApp) => {
 
     // 使用 appStore 添加应用，统一数据管理
     appStore.addApp(newApp).then((result) => {
-      console.log('handleAppCreated 完成添加:', result)
+      // 这里，或者在  node js 端更新 app 并返回
     })
 
     // 关闭配置模态窗口
@@ -703,17 +695,14 @@ const handleBackgroundInstallation = () => {
 
     <!-- Configuration Modal -->
     <Teleport to="body">
-      <transition name="modal-fade">
-        <ConfigModal
-          v-if="showConfigModal"
-          :app="currentAppConfig"
-          :modalPosition="configModalPosition"
-          :isNewApp="!apps.some((app) => app.id === currentAppConfig?.id)"
-          @close="closeConfigModal"
-          @save="saveAppConfig"
-          @create="handleAppCreated"
-        />
-      </transition>
+      <AppCreationFlow
+        ref="appCreationFlowRef"
+        :existing-app="currentAppConfig"
+        :is-editing="!!currentAppConfig"
+        @close="closeConfigModal"
+        @create="handleAppCreated"
+        @update="handleAppUpdated"
+      />
     </Teleport>
 
     <!-- Installation Modal (使用新组件) -->

@@ -1,76 +1,76 @@
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
-import AppItem from "./AppItem.vue";
-// import AppCreateModal from "./appcreatemodal/AppCreateModalRefactored.vue";
-import AppCreateModal from "./appcreatemodalplus/AppCreateModalPlus.vue";
-import AppConfigModal from "./appcreatemodalplus/AppConfigModal.vue";
-import electronStore from "../../services/electronStore";
+import { ref, computed, onMounted, watch } from 'vue'
+import AppItem from './AppItem.vue'
+// import AppCreateModal from "./appcreatemodalplus/AppCreateModalPlus.vue";
+import AppCreationFlow from './AppCreationFlow.vue'
+import AppConfigModal from './appcreatemodalplus/AppConfigModal.vue'
+import electronStore from '../../services/electronStore'
 
 const props = defineProps({
   apps: {
     type: Array,
-    required: true,
+    required: true
   },
   searchQuery: {
     type: String,
-    required: true,
+    required: true
   },
   selectedTags: {
     type: Array,
-    required: true,
+    required: true
   },
   filterMode: {
     type: String,
-    required: true,
+    required: true
   },
   sortBy: {
     type: String,
-    required: true,
+    required: true
   },
   sortDirection: {
     type: String,
-    required: true,
-  },
-});
+    required: true
+  }
+})
 
 const emit = defineEmits([
-  "open-app",
-  "open-config",
-  "delete-app",
-  "clone-app",
-  "add-tag-to-filter",
-  "update-apps",
-]);
+  'open-app',
+  'open-config',
+  'delete-app',
+  'clone-app',
+  'add-tag-to-filter',
+  'update-apps'
+])
 
 // 本地应用列表数据
-const localApps = ref([]);
+const localApps = ref([])
 
 // 监听props.apps的变化，同步到本地
 watch(
   () => props.apps,
   (newApps) => {
-    console.log("Apps prop updated:", newApps?.length);
-    localApps.value = [...newApps];
+    console.log('Apps prop updated:', newApps?.length)
+    localApps.value = [...newApps]
   },
   { deep: true }
-);
+)
 
 // For tracking expanded cards
-const expandedCards = ref({});
+const expandedCards = ref({})
 const toggleExpand = (appId) => {
-  expandedCards.value[appId] = !expandedCards.value[appId];
-};
+  expandedCards.value[appId] = !expandedCards.value[appId]
+}
 
 // For app actions dropdown
-const activeDropdownId = ref(null);
+const activeDropdownId = ref(null)
 const toggleDropdown = (appId, event) => {
-  event.stopPropagation();
-  activeDropdownId.value = activeDropdownId.value === appId ? null : appId;
-};
+  event.stopPropagation()
+  activeDropdownId.value = activeDropdownId.value === appId ? null : appId
+}
 
 const closeDropdowns = () => {
-  activeDropdownId.value = null;
-};
+  activeDropdownId.value = null
+}
 
 // Filtered and sorted apps based on props
 const filteredAndSortedApps = computed(() => {
@@ -79,110 +79,106 @@ const filteredAndSortedApps = computed(() => {
     (app) =>
       app.name.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
       app.description.toLowerCase().includes(props.searchQuery.toLowerCase())
-  );
+  )
 
   // Then filter by tags
-  if (!props.selectedTags.includes("All")) {
-    if (props.filterMode === "any") {
+  if (!props.selectedTags.includes('All')) {
+    if (props.filterMode === 'any') {
       // Show apps that have ANY of the selected tags (OR logic)
-      result = result.filter((app) =>
-        app.tags.some((tag) => props.selectedTags.includes(tag))
-      );
+      result = result.filter((app) => app.tags.some((tag) => props.selectedTags.includes(tag)))
     } else {
       // Show apps that have ALL of the selected tags (AND logic)
-      result = result.filter((app) =>
-        props.selectedTags.every((tag) => app.tags.includes(tag))
-      );
+      result = result.filter((app) => props.selectedTags.every((tag) => app.tags.includes(tag)))
     }
   }
 
   // Then sort
   result.sort((a, b) => {
-    let valueA = a[props.sortBy];
-    let valueB = b[props.sortBy];
+    let valueA = a[props.sortBy]
+    let valueB = b[props.sortBy]
 
     // For dates, convert to timestamps for comparison
-    if (props.sortBy === "createdAt" || props.sortBy === "lastUsedAt") {
-      valueA = new Date(valueA).getTime();
-      valueB = new Date(valueB).getTime();
+    if (props.sortBy === 'createdAt' || props.sortBy === 'lastUsedAt') {
+      valueA = new Date(valueA).getTime()
+      valueB = new Date(valueB).getTime()
     }
 
-    if (props.sortDirection === "asc") {
-      return valueA > valueB ? 1 : -1;
+    if (props.sortDirection === 'asc') {
+      return valueA > valueB ? 1 : -1
     } else {
-      return valueA < valueB ? 1 : -1;
+      return valueA < valueB ? 1 : -1
     }
-  });
+  })
 
-  return result;
-});
+  return result
+})
 
 // Handler methods that forward events to parent
 const handleOpenApp = (app, event) => {
-  emit("open-app", app, event);
-};
+  emit('open-app', app, event)
+}
 
 const handleOpenConfig = (app, event) => {
-  emit("open-config", app, event);
-  closeDropdowns();
-};
+  emit('open-config', app, event)
+  closeDropdowns()
+}
 
 const handleDeleteApp = async (app, event) => {
   if (confirm(`确定要删除应用 "${app.name}" 吗？`)) {
     try {
       // 使用electronStore服务删除应用
-      await electronStore.deleteApp(app.id);
+      await electronStore.deleteApp(app.id)
 
       // 从本地列表中移除
-      const index = localApps.value.findIndex((a) => a.id == app.id);
+      const index = localApps.value.findIndex((a) => a.id == app.id)
       if (index !== -1) {
-        localApps.value.splice(index, 1);
+        localApps.value.splice(index, 1)
         // 通知父组件更新
-        emit("update-apps", localApps.value);
+        emit('update-apps', localApps.value)
       }
     } catch (error) {
-      console.error("删除应用失败:", error);
+      console.error('删除应用失败:', error)
     }
   }
-};
+}
 
 const handleCloneApp = (app, event) => {
-  emit("clone-app", app, event);
-};
+  emit('clone-app', app, event)
+}
 
 const handleAddTagToFilter = (tag, event) => {
-  emit("add-tag-to-filter", tag, event);
-};
+  emit('add-tag-to-filter', tag, event)
+}
 
 // 应用列表
-const showCreateModal = ref(false);
-const showConfigModal = ref(false);
-const currentEditApp = ref(null);
+const showCreateModal = ref(false)
+const showConfigModal = ref(false)
+const currentEditApp = ref(null)
 
 // 初始化时同步props到本地数据
 onMounted(async () => {
   // 初始化electronStore
-  await electronStore.initializeStorage();
+  await electronStore.initializeStorage()
 
   // 初始化本地应用列表
   if (props.apps && props.apps.length > 0) {
-    localApps.value = [...props.apps];
+    localApps.value = [...props.apps]
   } else {
-    await loadApps();
+    await loadApps()
   }
-});
+})
 
 // 从 electronStore 加载应用数据
 async function loadApps() {
   try {
-    const loadedApps = await electronStore.getApps();
+    const loadedApps = await electronStore.getApps()
     if (Array.isArray(loadedApps) && loadedApps.length > 0) {
-      localApps.value = loadedApps;
+      localApps.value = loadedApps
       // 通知父组件更新应用列表
-      emit("update-apps", localApps.value);
-      console.log("成功加载了", loadedApps.length, "个应用");
+      emit('update-apps', localApps.value)
+      console.log('成功加载了', loadedApps.length, '个应用')
     } else {
-      console.log("无应用配置或应用列表为空");
+      console.log('无应用配置或应用列表为空')
 
       // 如果是开发模式且没有应用，尝试从示例数据创建一些
       // if (electronStore.isDevelopmentMode) {
@@ -190,7 +186,7 @@ async function loadApps() {
       // }
     }
   } catch (error) {
-    console.error("加载应用列表失败:", error);
+    console.error('加载应用列表失败:', error)
   }
 }
 
@@ -201,96 +197,99 @@ async function createSampleApps() {
     localApps.value = [
       {
         id: Date.now(),
-        name: "示例应用",
-        description: "这是一个示例应用",
-        tags: ["文本生成", "聊天机器人"],
+        name: '示例应用',
+        description: '这是一个示例应用',
+        tags: ['文本生成', '聊天机器人'],
         pythonInfo: {
-          version: "3.11",
-          installCommands: ["pip install -r requirements.txt"],
-          startCommand: "python main.py",
+          version: '3.11',
+          installCommands: ['pip install -r requirements.txt'],
+          startCommand: 'python main.py'
         },
         modelInfo: {
-          type: "auto-import",
-          modelFolders: ["/path/to/models"],
-          hasApiKey: false,
+          type: 'auto-import',
+          modelFolders: ['/path/to/models'],
+          hasApiKey: false
         },
-        createdAt: new Date().toISOString().split("T")[0],
-        lastUsedAt: new Date().toISOString().split("T")[0],
-        icon: "💡",
-        status: "completed",
-        setupProgress: 100,
-      },
-    ];
+        createdAt: new Date().toISOString().split('T')[0],
+        lastUsedAt: new Date().toISOString().split('T')[0],
+        icon: '💡',
+        status: 'completed',
+        setupProgress: 100
+      }
+    ]
 
     // 保存到电子存储
-    await electronStore.saveApps(localApps.value);
+    await electronStore.saveApps(localApps.value)
 
     // 通知父组件更新应用列表
-    emit("update-apps", localApps.value);
+    emit('update-apps', localApps.value)
 
-    console.log("已创建示例应用");
+    console.log('已创建示例应用')
   } catch (error) {
-    console.error("创建示例应用失败:", error);
+    console.error('创建示例应用失败:', error)
   }
 }
 
 // 运行应用
 async function runApp(app) {
   try {
-    console.log("app", app);
-    if (!app.pythonEnvironments?.length) return;
+    console.log('app', app)
+    if (!app.pythonEnvironments?.length) return
     // 直接使用window.electronAPI.runApp，因为这个还是特殊的功能
-    console.log(
-      "window.electronAPI.runAppCommand",
-      window.electronAPI.runAppCommand
-    );
+    console.log('window.electronAPI.runAppCommand', window.electronAPI.runAppCommand)
     if (window.electronAPI && window.electronAPI.runAppCommand) {
-      console.log("running..");
-      let env = app.pythonEnvironments.find((env) => env.isDefault);
+      console.log('running..')
+      let env = app.pythonEnvironments.find((env) => env.isDefault)
       if (!env) {
-        env = app.pythonEnvironments[0];
+        env = app.pythonEnvironments[0]
       }
-      const pythonPath = env.pythonPath;
-      const launchCommand = env.startCommand;
-      const cwd = app.folderPath;
-      console.log("runApp", pythonPath, launchCommand, cwd);
+      const pythonPath = env.pythonPath
+      const launchCommand = env.startCommand
+      const cwd = app.folderPath
+      console.log('runApp', pythonPath, launchCommand, cwd)
       const result = await window.electronAPI.runAppCommand({
         pythonPath,
         launchCommand,
-        cwd,
-      });
-      console.log(result);
+        cwd
+      })
+      console.log(result)
       if (result && result.success) {
         // 更新最后使用时间
-        const appToUpdate = localApps.value.find((a) => a.id == app.id);
+        const appToUpdate = localApps.value.find((a) => a.id == app.id)
         if (appToUpdate) {
-          appToUpdate.lastUsedAt = new Date().toISOString().split("T")[0];
+          appToUpdate.lastUsedAt = new Date().toISOString().split('T')[0]
           // 保存更新
-          await saveApps();
+          await saveApps()
         }
       } else {
-        console.error("运行应用失败:", result ? result.message : "未知错误");
+        console.error('运行应用失败:', result ? result.message : '未知错误')
       }
     } else {
-      console.log("运行应用:", app.name);
+      console.log('运行应用:', app.name)
     }
   } catch (error) {
-    console.error("运行应用出错:", error);
+    console.error('运行应用出错:', error)
   }
 }
 
 // 编辑应用
 function editApp(app) {
-  console.log("editApp", app);
-  currentEditApp.value = JSON.parse(JSON.stringify(app)); // 深拷贝
-  showConfigModal.value = true;
+  console.log('editApp', app)
+  currentEditApp.value = JSON.parse(JSON.stringify(app)) // 深拷贝
+  showConfigModal.value = true
+}
+
+// 打开创建应用流程
+function openCreateAppFlow() {
+  if (this.$refs.appCreationFlow) {
+    this.$refs.appCreationFlow.openAppCreation()
+  }
 }
 
 // 关闭 Modal
 function closeModal() {
-  showCreateModal.value = false;
-  showConfigModal.value = false;
-  currentEditApp.value = null;
+  currentEditApp.value = null
+  showConfigModal.value = false
 }
 
 // 处理应用创建事件
@@ -298,62 +297,62 @@ async function handleAppCreated(newApp) {
   try {
     // 生成新ID (如果没有)
     if (!newApp.id) {
-      newApp.id = Date.now();
+      newApp.id = Date.now()
     }
 
     // 设置创建日期和最后使用日期
     if (!newApp.createdAt) {
-      newApp.createdAt = new Date().toISOString().split("T")[0];
+      newApp.createdAt = new Date().toISOString().split('T')[0]
     }
     if (!newApp.lastUsedAt) {
-      newApp.lastUsedAt = newApp.createdAt;
+      newApp.lastUsedAt = newApp.createdAt
     }
 
     // 添加到本地列表
-    localApps.value.push(newApp);
+    localApps.value.push(newApp)
 
     // 使用electronStore保存应用
-    await electronStore.saveApps(localApps.value);
+    await electronStore.saveApps(localApps.value)
 
     // 通知父组件更新应用列表
-    emit("update-apps", localApps.value);
+    emit('update-apps', localApps.value)
 
-    console.log("成功创建应用:", newApp.name);
+    console.log('成功创建应用:', newApp.name)
   } catch (error) {
-    console.error("保存新应用失败:", error);
+    console.error('保存新应用失败:', error)
   }
 }
 
 // 处理应用更新事件
 async function handleAppUpdated(updatedApp) {
   try {
-    const index = localApps.value.findIndex((app) => app.id == updatedApp.id);
+    const index = localApps.value.findIndex((app) => app.id == updatedApp.id)
     if (index !== -1) {
       // 更新应用
-      localApps.value[index] = updatedApp;
+      localApps.value[index] = updatedApp
 
       // 使用electronStore保存应用
-      await electronStore.saveApps(localApps.value);
+      await electronStore.saveApps(localApps.value)
 
       // 通知父组件更新应用列表
-      emit("update-apps", localApps.value);
+      emit('update-apps', localApps.value)
 
-      console.log("成功更新应用:", updatedApp.name);
+      console.log('成功更新应用:', updatedApp.name)
     } else {
-      console.warn("未找到要更新的应用:", updatedApp.id);
+      console.warn('未找到要更新的应用:', updatedApp.id)
     }
   } catch (error) {
-    console.error("更新应用失败:", error);
+    console.error('更新应用失败:', error)
   }
 }
 
 // 保存应用列表
 async function saveApps() {
   try {
-    await electronStore.saveApps(localApps.value);
-    console.log("应用列表保存成功");
+    await electronStore.saveApps(localApps.value)
+    console.log('应用列表保存成功')
   } catch (error) {
-    console.error("保存应用列表失败:", error);
+    console.error('保存应用列表失败:', error)
   }
 }
 </script>
@@ -371,9 +370,9 @@ async function saveApps() {
         <p>No apps found matching your criteria</p>
         <p class="no-results-hint">
           {{
-            filterMode === "all"
+            filterMode === 'all'
               ? 'Try switching to "Any Selected Tag" mode or select fewer tags.'
-              : "Try different tags or clear your search."
+              : 'Try different tags or clear your search.'
           }}
         </p>
       </div>
@@ -400,8 +399,8 @@ async function saveApps() {
     </div>
 
     <!-- 创建/编辑应用的 Modal -->
-    <AppCreateModal
-      v-if="showCreateModal"
+    <AppCreationFlow
+      ref="appCreationFlow"
       :existing-app="currentEditApp"
       :is-editing="!!currentEditApp"
       @close="closeModal"
