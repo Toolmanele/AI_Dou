@@ -131,11 +131,7 @@
 
           <div class="modal-actions">
             <button class="cancel-button" @click="closeImportModal">取消</button>
-            <button
-              class="import-button"
-              :disabled="!importEnvInfo"
-              @click="importPythonEnvironment"
-            >
+            <button class="import-button" :disabled="!importPath" @click="importPythonEnvironment">
               导入
             </button>
           </div>
@@ -325,30 +321,60 @@ function closeImportModal() {
 }
 
 async function browsePythonFolder() {
+  let directory = 'pythonPath'
   try {
-    // Use Electron dialog to select a folder
-    if (window.electronAPI && window.electronAPI.selectFolder) {
-      const result = await window.electronAPI.selectFolder({
-        title: '选择 Python 环境文件夹',
-        defaultPath: ''
+    // 使用 Electron API 打开目录选择对话框
+    if (window.electronAPI && window.electronAPI.showOpenDialog) {
+      // 设置对话框标题
+      let title = '选择Python环境目录'
+
+      // 调用 electron 的文件夹选择对话框
+      const result = await window.electronAPI.showOpenDialog({
+        title: title,
+        defaultPath: '',
+        properties: ['openDirectory']
       })
 
-      if (result && result.filePaths && result.filePaths.length > 0) {
-        importPath.value = result.filePaths[0]
+      // 如果用户选择了目录
+      if (result && !result.canceled && result.filePaths && result.filePaths.length > 0) {
+        const selectedPath = result.filePaths[0]
+        // store.appData[directory] = selectedPath
 
-        // Check if the selected folder contains a Python installation
-        await detectPythonEnvironment(importPath.value)
+        // // If it's the working directory, update the folderPath in the store
+        // if (directory === 'workingDir') {
+        //   store.setFolderPath(selectedPath)
+        // }
+        importPath.value = selectedPath
+        console.log(`已选择${directory}:`, selectedPath)
+        let detectResult = await detectPythonEnvironment(selectedPath)
+        console.log(`检测结果:`, detectResult)
+        return selectedPath
+      }
+    } else if (window.electronAPI && window.electronAPI.selectDirectory) {
+      // 尝试使用备用方法
+      const result = await window.electronAPI.selectDirectory()
+      if (result && !result.canceled && result.filePath) {
+        store.appData[directory] = result.filePath
+
+        // If it's the working directory, update the folderPath in the store
+        if (directory === 'workingDir') {
+          store.setFolderPath(result.filePath)
+        }
+
+        console.log(`已选择${directory}:`, result.filePath)
+        return result.filePath
       }
     } else {
-      // Fallback for development/browser environment
-      importError.value = '无法访问文件系统，请确保在 Electron 环境中运行'
+      // 如果没有可用的 electronAPI，显示一个警告
+      console.warn('目录选择功能需要 Electron 环境')
     }
-  } catch (error) {
-    console.error('选择文件夹出错:', error)
-    importError.value = '选择文件夹时出错: ' + error.message
+  } catch (err) {
+    console.error(`选择${directory}失败:`, err)
   }
+  return null
 }
 
+// 这里是需要检测 python 环境
 async function detectPythonEnvironment(path) {
   try {
     importError.value = ''
@@ -780,6 +806,7 @@ defineExpose({
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
+  color: var(--color-text);
 }
 
 .browse-button:hover {
@@ -848,6 +875,7 @@ defineExpose({
   border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
+  color: var(--color-text);
 }
 
 .import-button {
@@ -873,6 +901,6 @@ defineExpose({
   border: none;
   font-size: 22px;
   cursor: pointer;
-  color: var(--color-text-light);
+  color: var(--color-text);
 }
 </style>

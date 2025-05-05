@@ -21,5 +21,11 @@ export default {
 
   // 监听安装进度
   onInstallProgress: (callback) =>
-    ipcRenderer.on('install-progress', (_event, data) => callback(data))
+    ipcRenderer.on('install-progress', (_event, data) => callback(data)),
+
+  // 检测 Python 版本和 pip 版本
+  detectPythonVersion: (pythonPath) => ipcRenderer.invoke('detect-python-version', pythonPath),
+
+  // 查找系统上已安装的 Python
+  findPythonInstallations: () => ipcRenderer.invoke('find-python-installations')
 }

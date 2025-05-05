@@ -10,12 +10,7 @@
         <div class="form-group">
           <label>文件夹路径 <span class="required">*</span></label>
           <div class="folder-path-input">
-            <input
-              type="text"
-              v-model="folderPath"
-              placeholder="应用文件夹路径"
-              readonly
-            />
+            <input type="text" v-model="folderPath" placeholder="应用文件夹路径" readonly />
             <button class="browse-button" @click="browseFolder">浏览...</button>
           </div>
           <div class="source-hint">选择包含应用代码的本地文件夹</div>
@@ -28,11 +23,7 @@
 
       <div class="modal-footer">
         <button class="cancel-button" @click="cancelSelection">取消</button>
-        <button
-          class="confirm-button"
-          @click="confirmSelection"
-          :disabled="!folderPath"
-        >
+        <button class="confirm-button" @click="confirmSelection" :disabled="!folderPath">
           确认
         </button>
       </div>
@@ -41,65 +32,58 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useAppCreateStore } from "../../../stores/appCreateStore";
+import { ref, computed } from 'vue'
+import { useAppCreateStore } from '../../../stores/appCreateStore'
 
-const emit = defineEmits(["close", "browse-directory", "confirm"]);
+const emit = defineEmits(['close', 'browse-directory', 'confirm'])
 
 // Use the Pinia store
-const store = useAppCreateStore();
+const store = useAppCreateStore()
 // const folderPath = ref(store.folderPath || "");
-const folderPath = computed(() => store.appData.folderPath || "");
+const folderPath = computed(() => store.appData.folderPath || '')
 async function browseFolder() {
   // 设置对话框标题
-  let title = "选择工作目录";
-  let directory = "folderPath";
+  let title = '选择工作目录'
+  let directory = 'folderPath'
   try {
     // 使用 Electron API 打开目录选择对话框
     if (window.electronAPI && window.electronAPI.showOpenDialog) {
       // 调用 electron 的文件夹选择对话框
       const result = await window.electronAPI.showOpenDialog({
         title: title,
-        defaultPath: store.appData[directory] || "",
-        properties: ["openDirectory"],
-      });
+        defaultPath: store.appData[directory] || '',
+        properties: ['openDirectory']
+      })
 
       // 如果用户选择了目录
-      if (
-        result &&
-        !result.canceled &&
-        result.filePaths &&
-        result.filePaths.length > 0
-      ) {
-        const selectedPath = result.filePaths[0];
-        console.log(selectedPath, directory);
-        store.appData[directory] = selectedPath;
-        console.log(store.appData);
-        console.log("folderPath.value", folderPath.value);
-        await store.setFolderPath(selectedPath);
-        store.appData.name = await window.electronAPI.getFolderBasename(
-          selectedPath
-        );
-        console.log("store.appData.name", store.appData.name);
-        console.log(`已选择${directory}:`, selectedPath);
+      if (result && !result.canceled && result.filePaths && result.filePaths.length > 0) {
+        const selectedPath = result.filePaths[0]
+        console.log(selectedPath, directory)
+        store.appData[directory] = selectedPath
+        console.log(store.appData)
+        console.log('folderPath.value', folderPath.value)
+        await store.setFolderPath(selectedPath)
+        store.appData.name = await window.electronAPI.getFolderBasename(selectedPath)
+        console.log('store.appData.name', store.appData.name)
+        console.log(`已选择${directory}:`, selectedPath)
 
         // return selectedPath;
       }
     }
   } catch (err) {
-    console.error(`选择${directory}失败:`, err);
+    console.error(`选择${directory}失败:`, err)
   }
-  return null;
+  return null
 }
 
 function cancelSelection() {
   // folderPath.value = "";
-  store.setFolderPath("");
-  emit("close");
+  store.setFolderPath('')
+  emit('close')
 }
 // Confirm selection
 function confirmSelection() {
-  emit("close");
+  emit('close')
 }
 </script>
 
@@ -235,7 +219,7 @@ input:focus {
 .browse-button {
   padding: 8px 12px;
   background-color: var(--color-primary);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;

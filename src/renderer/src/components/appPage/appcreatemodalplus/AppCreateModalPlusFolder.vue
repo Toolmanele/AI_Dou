@@ -75,7 +75,7 @@ import { useSettingsStore } from '../../../stores/settings'
 import formatData from '../../../services/formatData'
 import electronStore from '../../../services/electronStore'
 import SeedList from '../SeedList.vue'
-console.log('AppCreateModalPlusFolder Show')
+
 const {
   getFastestPipMirrorUrl,
   formatPipUrl,
