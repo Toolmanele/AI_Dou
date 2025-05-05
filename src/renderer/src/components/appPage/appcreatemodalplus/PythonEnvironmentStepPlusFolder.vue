@@ -81,6 +81,7 @@
       </div>
     </div>
 
+    <!-- Import Python Environment Modal -->
     <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
       <div class="modal-container" @click.stop>
         <div class="modal-header">
@@ -142,178 +143,14 @@
       </div>
     </div>
 
-    <!-- Add a modal for environment editing/creation -->
-    <div v-if="showEnvModal" class="env-modal-overlay" @click="closeEnvModal">
-      <div class="env-modal-container" @click.stop>
-        <div class="env-modal-header">
-          <h3>{{ isEditingEnv ? '编辑 Python 环境' : '添加 Python 环境' }}</h3>
-          <button class="close-modal-button" @click="closeEnvModal">×</button>
-        </div>
-        <div class="env-modal-body">
-          <!-- Python Version Selection - Horizontal Button Group -->
-          <div class="form-group">
-            <label>Python 版本</label>
-            <div class="version-selector">
-              <button
-                v-for="version in pythonVersions"
-                :key="version"
-                class="version-button"
-                :class="{ active: currentEnv.pythonVersion === version }"
-                @click="currentEnv.pythonVersion = version"
-              >
-                {{ version }}
-              </button>
-            </div>
-          </div>
-
-          <!-- PyTorch Configuration -->
-          <div class="form-group">
-            <div class="pytorch-config">
-              <div class="source-selector">
-                <label class="source-label">PyTorch 源</label>
-                <div class="source-buttons">
-                  <button
-                    class="source-button"
-                    :class="{ active: currentEnv.pytorch.source === 'official' }"
-                    @click="updatePytorchSource(currentEnv, 'official')"
-                  >
-                    官方
-                  </button>
-                  <button
-                    class="source-button"
-                    :class="{ active: currentEnv.pytorch.source === 'aliyun' }"
-                    @click="updatePytorchSource(currentEnv, 'aliyun')"
-                  >
-                    阿里
-                  </button>
-                </div>
-              </div>
-              <label>PyTorch配置命令</label>
-              <div class="config-commands">
-                <div
-                  v-for="(cmd, cmdIndex) in currentEnv.pytorch.installCommands"
-                  :key="cmdIndex"
-                  class="command-item"
-                >
-                  <div class="command-display">
-                    {{ getFormattedCommands([cmd], 'pytorch', currentEnv.pytorch.source)[0] }}
-                  </div>
-                  <textarea
-                    ref="commandTextareas"
-                    :key="`pytorch-modal-${cmdIndex}`"
-                    v-model="currentEnv.pytorch.installCommands[cmdIndex]"
-                    :rows="Math.max(1, cmd.split('\n').length)"
-                    class="command-textarea hidden"
-                    @input="autoResizeTextarea($event.target)"
-                  ></textarea>
-                  <button
-                    v-if="currentEnv.pytorch.installCommands.length > 1"
-                    class="remove-button"
-                    @click="removePytorchCommand(currentEnv, cmdIndex)"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- PIP Source Configuration -->
-          <div class="form-group">
-            <div class="pip-config">
-              <div class="source-selector">
-                <label class="source-label">PIP 源</label>
-                <div class="source-buttons source-buttons-grid">
-                  <button
-                    class="source-button"
-                    :class="{ active: currentEnv.pip.source === 'official' }"
-                    @click="updatePipSource(currentEnv, 'official')"
-                  >
-                    官方
-                  </button>
-                  <button
-                    class="source-button"
-                    :class="{ active: currentEnv.pip.source === 'tsinghua' }"
-                    @click="updatePipSource(currentEnv, 'tsinghua')"
-                  >
-                    清华
-                  </button>
-                  <button
-                    class="source-button"
-                    :class="{ active: currentEnv.pip.source === 'aliyun' }"
-                    @click="updatePipSource(currentEnv, 'aliyun')"
-                  >
-                    阿里
-                  </button>
-                </div>
-              </div>
-              <div class="pip-label-row">
-                <label>PIP安装命令</label>
-                <button class="add-command" @click="addPipCommand(currentEnv)">+</button>
-              </div>
-              <div class="config-commands">
-                <div
-                  v-for="(cmd, cmdIndex) in currentEnv.pip.installCommands"
-                  :key="cmdIndex"
-                  class="command-item"
-                >
-                  <div class="command-input-container">
-                    <span class="command-tip">
-                      --index-url={{ formatData.getSourceUrl(currentEnv.pip.source, 'pip') }}
-                    </span>
-                    <input
-                      type="text"
-                      v-model="currentEnv.pip.installCommands[cmdIndex]"
-                      class="command-input"
-                      placeholder="例如: pip install -r requirements.txt"
-                    />
-                    <button
-                      v-if="currentEnv.pip.installCommands.length > 1"
-                      class="remove-button"
-                      @click="removePipCommand(currentEnv, cmdIndex)"
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Launch Command -->
-          <div class="form-group">
-            <label>启动命令 <span class="required">*</span></label>
-            <input
-              type="text"
-              v-model="currentEnv.startCommand"
-              placeholder="例如: python main.py"
-              :class="{
-                error: store.errors.startCommand && isEditingEnv && isFirst(editingEnvIndex)
-              }"
-            />
-            <div
-              v-if="store.errors.startCommand && isEditingEnv && isFirst(editingEnvIndex)"
-              class="error-message"
-            >
-              {{ store.errors.startCommand }}
-            </div>
-            <div class="command-hint">应用启动时执行的命令</div>
-          </div>
-
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="currentEnv.isDefault" />
-              <span>设为默认环境</span>
-            </label>
-          </div>
-
-          <div class="env-modal-actions">
-            <button class="cancel-button" @click="closeEnvModal">取消</button>
-            <button class="save-button" @click="saveEnvironment">保存</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Environment Edit/Create Modal -->
+    <PythonEnvironmentModal
+      v-if="showEnvModal"
+      :environment="currentEnv"
+      :isEditing="isEditingEnv"
+      @close="closeEnvModal"
+      @save="saveEnvironment"
+    />
 
     <div class="python-tips">
       <h4>Python 环境提示：</h4>
@@ -331,6 +168,7 @@
 import { ref, onMounted, watch, nextTick, computed } from 'vue'
 import { useAppCreateStore } from '../../../stores/appCreateStore'
 import formatData from '../../../services/formatData'
+import PythonEnvironmentModal from './PythonEnvironmentModal.vue'
 
 const props = defineProps({
   isActive: {
@@ -346,73 +184,44 @@ const stepRef = ref(null)
 // Python versions available for selection
 const pythonVersions = ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
 
-// textarea refs
-const commandTextareas = ref([])
-
-// 自动调整所有 textarea 高度
-function resizeAllTextareas() {
-  nextTick(() => {
-    if (commandTextareas.value) {
-      commandTextareas.value.forEach((el) => {
-        if (el) autoResizeTextarea(el)
-      })
-    }
-  })
-}
-
-// 监听命令变化
-watch(
-  () =>
-    store.appData.pythonEnvironments
-      .map((env) => {
-        console.log('env', env)
-        return [...env.pytorch.installCommands, ...env.pip.installCommands]
-      })
-      .flat(),
-  resizeAllTextareas,
-  { immediate: true }
-)
-
-// 自动选择最快的镜像
-async function selectFastestMirrors() {
-  try {
-    // 测试最快的 PIP 镜像
-    const fastestPipSource = await formatData.getFastestPipMirrorUrl()
-    console.log('最快的 PIP 镜像:', fastestPipSource)
-
-    // 测试最快的 PyTorch 镜像
-    const fastestPytorchSource = await formatData.getFastestPytorchMirrorUrl()
-    console.log('最快的 PyTorch 镜像:', fastestPytorchSource)
-
-    // 更新所有环境的镜像源
-    store.appData.pythonEnvironments.forEach((env) => {
-      env.pip.source = fastestPipSource
-      env.pytorch.source = fastestPytorchSource
-    })
-  } catch (error) {
-    console.error('选择最快镜像时出错:', error)
-  }
-}
-
-// 在组件挂载时自动选择最快的镜像
-onMounted(() => {
-  resizeAllTextareas()
-  // 自动选择最快的,暂时不需要这个功能
-  // selectFastestMirrors();
+// Modal states
+const showEnvModal = ref(false)
+const isEditingEnv = ref(false)
+const editingEnvIndex = ref(-1)
+const currentEnv = ref({
+  pythonVersion: '3.10',
+  pythonPath: '',
+  executable: 'python',
+  pip: {
+    source: 'official',
+    installCommands: ['pip install -r requirements.txt']
+  },
+  pytorch: {
+    source: 'official',
+    installCommands: ['pip install torch torchvision torchaudio']
+  },
+  startCommand: 'python main.py',
+  isInstalled: false,
+  isDefault: false,
+  isCollapsed: false,
+  isInstalling: false,
+  installProgress: 0,
+  installLogs: [],
+  installError: '',
+  needConfigAppSpace: false,
+  showLogs: false
 })
+
+// Import modal state
+const showImportModal = ref(false)
+const importPath = ref('')
+const importEnvInfo = ref(null)
+const importError = ref('')
+const importEnvType = ref('default')
 
 // Check if this is the first environment
 function isFirst(index) {
   return index === 0
-}
-
-// Toggle environment collapsed state
-function toggleEnvironment(index) {
-  // First environment should always be expanded
-  if (!isFirst(index)) {
-    store.appData.pythonEnvironments[index].isCollapsed =
-      !store.appData.pythonEnvironments[index].isCollapsed
-  }
 }
 
 // Set default environment
@@ -421,56 +230,6 @@ function setDefaultEnvironment(index) {
   store.appData.pythonEnvironments.forEach((env, i) => {
     env.isDefault = i === index
   })
-}
-
-// Source update functions
-function updatePytorchSource(env, source) {
-  env.pytorch.source = source
-}
-
-function updatePipSource(env, source) {
-  env.pip.source = source
-}
-
-// Command management functions
-function addPytorchCommand(env) {
-  env.pytorch.installCommands.push('')
-}
-
-function removePytorchCommand(env, index) {
-  env.pytorch.installCommands.splice(index, 1)
-}
-
-function addPipCommand(env) {
-  env.pip.installCommands.push('')
-}
-
-function removePipCommand(env, index) {
-  env.pip.installCommands.splice(index, 1)
-}
-
-// Command formatting
-function getFormattedCommands(commands, type, source) {
-  return formatData.formatCommands(commands, type, source)
-}
-
-// Create computed properties for formatted commands
-const getFormattedPytorchCommands = (env) => {
-  return computed(() => {
-    return getFormattedCommands(env.pytorch.installCommands, 'pytorch', env.pytorch.source)
-  })
-}
-
-const getFormattedPipCommands = (env) => {
-  return computed(() => {
-    return getFormattedCommands(env.pip.installCommands, 'pip', env.pip.source)
-  })
-}
-
-// Textarea auto-resize
-function autoResizeTextarea(textarea) {
-  textarea.style.height = 'auto'
-  textarea.style.height = textarea.scrollHeight + 'px'
 }
 
 // Add new environment
@@ -507,29 +266,56 @@ function addEnvironment() {
   showEnvModal.value = true
 }
 
-// Install environment
-function installEnvironment(index) {
-  emit('install-environment', index)
+// Edit environment
+function editEnvironment(index) {
+  console.log('Editing environment at index', index)
+
+  // Create a deep copy of the environment to edit
+  currentEnv.value = JSON.parse(JSON.stringify(store.appData.pythonEnvironments[index]))
+
+  isEditingEnv.value = true
+  editingEnvIndex.value = index
+  showEnvModal.value = true
 }
 
-// Go to settings
-function goToSettings() {
-  emit('go-to-settings')
+// Save environment
+function saveEnvironment(environment) {
+  // Handle default status - if setting this as default, unset others
+  if (environment.isDefault) {
+    store.appData.pythonEnvironments.forEach((env) => {
+      env.isDefault = false
+    })
+  }
+
+  if (isEditingEnv.value) {
+    // Update existing environment
+    store.appData.pythonEnvironments[editingEnvIndex.value] = JSON.parse(
+      JSON.stringify(environment)
+    )
+  } else {
+    // Add new environment
+    store.appData.pythonEnvironments.push(JSON.parse(JSON.stringify(environment)))
+  }
+
+  // Close the modal
+  closeEnvModal()
 }
 
-// Expose the stepRef to parent
-defineExpose({
-  stepRef
-})
+// Close environment modal
+function closeEnvModal() {
+  showEnvModal.value = false
+}
 
-// Add these after the existing const declarations
-const showImportModal = ref(false)
-const importPath = ref('')
-const importEnvInfo = ref(null)
-const importError = ref('')
-const importEnvType = ref('default')
+// Delete environment
+function deleteEnvironment(index) {
+  if (index > 0 && !store.appData.pythonEnvironments[index].isDefault) {
+    if (confirm('确定要删除此环境吗？')) {
+      store.appData.pythonEnvironments.splice(index, 1)
+    }
+  }
+}
 
-// Add these after the existing functions
+// Import environment functions
 function closeImportModal() {
   showImportModal.value = false
   importPath.value = ''
@@ -657,90 +443,20 @@ function importPythonEnvironment() {
   }
 }
 
-// Add a modal for environment editing/creation
-const showEnvModal = ref(false)
-const isEditingEnv = ref(false)
-const editingEnvIndex = ref(-1)
-const currentEnv = ref({
-  pythonVersion: '3.10',
-  pythonPath: '',
-  executable: 'python',
-  pip: {
-    source: 'official',
-    installCommands: ['pip install -r requirements.txt']
-  },
-  pytorch: {
-    source: 'official',
-    installCommands: ['pip install torch torchvision torchaudio']
-  },
-  startCommand: 'python main.py',
-  isInstalled: false,
-  isDefault: false,
-  isCollapsed: false,
-  isInstalling: false,
-  installProgress: 0,
-  installLogs: [],
-  installError: '',
-  needConfigAppSpace: false,
-  showLogs: false
+// Install environment
+function installEnvironment(index) {
+  emit('install-environment', index)
+}
+
+// Go to settings
+function goToSettings() {
+  emit('go-to-settings')
+}
+
+// Expose the stepRef to parent
+defineExpose({
+  stepRef
 })
-
-// Add function to edit an existing environment
-function editEnvironment(index) {
-  console.log('Editing environment at index', index)
-
-  // Create a deep copy of the environment to edit
-  currentEnv.value = JSON.parse(JSON.stringify(store.appData.pythonEnvironments[index]))
-
-  isEditingEnv.value = true
-  editingEnvIndex.value = index
-  showEnvModal.value = true
-}
-
-// Add function to save the environment
-function saveEnvironment() {
-  if (!currentEnv.value.startCommand) {
-    store.errors.startCommand = '启动命令不能为空'
-    return
-  } else {
-    store.errors.startCommand = ''
-  }
-
-  // Handle default status - if setting this as default, unset others
-  if (currentEnv.value.isDefault) {
-    store.appData.pythonEnvironments.forEach((env) => {
-      env.isDefault = false
-    })
-  }
-
-  if (isEditingEnv.value) {
-    // Update existing environment
-    store.appData.pythonEnvironments[editingEnvIndex.value] = JSON.parse(
-      JSON.stringify(currentEnv.value)
-    )
-  } else {
-    // Add new environment
-    store.appData.pythonEnvironments.push(JSON.parse(JSON.stringify(currentEnv.value)))
-  }
-
-  // Close the modal
-  closeEnvModal()
-}
-
-// Add function to close the modal
-function closeEnvModal() {
-  showEnvModal.value = false
-  store.errors.startCommand = ''
-}
-
-// Add function to delete an environment
-function deleteEnvironment(index) {
-  if (index > 0 && !store.appData.pythonEnvironments[index].isDefault) {
-    if (confirm('确定要删除此环境吗？')) {
-      store.appData.pythonEnvironments.splice(index, 1)
-    }
-  }
-}
 </script>
 
 <style scoped>
@@ -756,7 +472,11 @@ function deleteEnvironment(index) {
   margin-left: -20px;
   margin-right: -20px;
 }
-
+.step-title {
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+  /* border-bottom: 1px solid var(--color-border); */
+}
 .environment-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -952,199 +672,29 @@ function deleteEnvironment(index) {
   border-color: #e53e3e;
 }
 
-/* Environment modal styles */
-.env-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.env-modal-container {
-  width: 700px;
-  max-width: 90%;
-  max-height: 90vh;
-  background-color: white;
+.python-tips {
+  background-color: var(--color-background-secondary);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.env-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.env-modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: var(--color-text-strong);
-}
-
-.env-modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.env-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  padding: 16px;
   margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
 }
 
-/* Additional styles for version selector, buttons, etc. */
-.version-selector,
-.source-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 10px;
-  width: 100%;
-}
-
-.source-buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 10px;
-  width: 100%;
-}
-
-.version-button,
-.source-button {
-  min-width: 80px;
-  max-width: 120px;
-  height: 40px;
-  padding: 0 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  background-color: var(--color-background);
-  color: var(--color-text);
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  box-sizing: border-box;
-  width: 100%;
-  justify-self: center;
-}
-
-.version-button:hover,
-.source-button:hover {
-  background-color: var(--color-hover);
-}
-
-.version-button.active,
-.source-button.active {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-/* More original styles from the file */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.form-group label {
+.python-tips h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
   font-size: 14px;
-  font-weight: 600;
   color: var(--color-text-strong);
-  display: flex;
-  align-items: center;
 }
 
-.add-command {
-  margin-left: 8px;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-background);
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--color-primary);
-  border: 1px solid var(--color-border);
+.python-tips ul {
+  margin: 0;
+  padding-left: 20px;
 }
 
-.add-command:hover {
-  background-color: var(--color-hover);
-}
-
-.required {
-  color: #e53e3e;
-  margin-left: 2px;
-}
-
-input[type='text'],
-select {
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-card);
-  color: var(--color-text);
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-input[type='text']:focus,
-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-hover);
-}
-
-input[type='text'].error {
-  border-color: #e53e3e;
-}
-
-.error-message {
-  color: #e53e3e;
+.python-tips li {
+  margin-bottom: 6px;
   font-size: 13px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-weight: normal !important;
-}
-
-.command-hint {
-  font-size: 12px;
-  color: var(--color-text-light);
-}
-
-.step-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-text-strong);
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 /* Import modal styles */
@@ -1184,14 +734,6 @@ input[type='text'].error {
   color: var(--color-text-strong);
 }
 
-.close-modal-button {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: var(--color-text-light);
-}
-
 .modal-body {
   padding: 20px;
 }
@@ -1203,6 +745,19 @@ input[type='text'].error {
   font-size: 14px;
 }
 
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
 .path-input-group {
   display: flex;
   gap: 8px;
@@ -1210,6 +765,12 @@ input[type='text'].error {
 
 .path-input-group input {
   flex: 1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font-size: 14px;
 }
 
 .browse-button {
@@ -1305,116 +866,6 @@ input[type='text'].error {
 .import-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.command-item {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.command-input-container {
-  position: relative;
-  display: flex;
-  flex: 1;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.command-tip {
-  position: absolute;
-  top: -14px;
-  right: 0px;
-  background: rgba(233, 233, 233, 0.85);
-  color: #838383;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  z-index: 2;
-  pointer-events: none;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #ccc;
-}
-
-.command-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: monospace;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.command-input:focus {
-  outline: none;
-}
-
-.save-button {
-  padding: 8px 16px;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.save-button:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.config-commands {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.command-display {
-  padding: 8px 12px;
-  border-radius: 6px;
-  background-color: var(--color-background-secondary);
-  font-family: monospace;
-  font-size: 14px;
-  line-height: 1.4;
-  margin-bottom: 8px;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.hidden {
-  display: none;
-}
-
-.remove-button {
-  width: 30px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--color-text-light);
-}
-
-.remove-button:hover {
-  background-color: var(--color-hover);
-  color: var(--color-text-strong);
-}
-
-.pip-label-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-.pip-label-row label {
-  margin-bottom: 0;
 }
 
 .close-modal-button {
