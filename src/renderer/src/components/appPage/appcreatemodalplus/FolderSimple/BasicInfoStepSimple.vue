@@ -1,94 +1,23 @@
 <template>
   <div id="step-0" ref="stepRef" class="step-form" :class="{ active: isActive }">
     <h3 class="step-title">基本信息</h3>
-
+    <!-- Source Selection -->
     <div class="form-group">
-      <label for="app-name">应用名称 <span class="required">*</span></label>
-      <input
-        id="app-name"
-        v-model="store.appData.name"
-        type="text"
-        placeholder="给你的应用起个名字"
-        :class="{ error: store.errors.name }"
-      />
-      <div v-if="store.errors.name" class="error-message">
-        {{ store.errors.name }}
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="app-description">应用描述</label>
-      <textarea
-        id="app-description"
-        v-model="store.appData.description"
-        placeholder="描述一下这个应用的功能和用途"
-        :rows="3"
-      ></textarea>
-    </div>
-
-    <div class="form-group">
-      <label for="app-tags">应用标签</label>
-      <div class="tags-input-container">
-        <div class="tags-container">
-          <div v-for="tag in store.appData.tags" :key="tag" class="selected-tag">
-            {{ tag }}
-            <span class="tag-remove" @click="store.removeTag(tag)">×</span>
-          </div>
-          <div class="tag-input-wrapper" v-if="isAddingCustomTag">
-            <input
-              v-model="customTag"
-              @keyup.enter="addCustomTag"
-              @blur="finishAddTag"
-              ref="customTagInput"
-              placeholder="输入标签名称"
-              type="text"
-              class="custom-tag-input"
-            />
-          </div>
-          <div v-else class="add-tag-button" @click="startAddCustomTag">+ 添加标签</div>
+      <div class="form-group">
+        <label>文件夹路径 <span class="required">*</span></label>
+        <div class="folder-path-input">
+          <input type="text" v-model="folderPath" placeholder="应用文件夹路径" readonly />
+          <button class="browse-button" @click="browseFolder">浏览...</button>
         </div>
-      </div>
-      <div class="predefined-tags">
-        <span class="predefined-tags-label">推荐标签:</span>
-        <div class="tags-list">
-          <div
-            v-for="tag in availableTags"
-            :key="tag"
-            class="tag-item"
-            :class="{ selected: store.appData.tags.includes(tag) }"
-            @click="store.toggleTag(tag)"
-          >
-            {{ tag }}
-          </div>
-        </div>
+        <div class="source-hint">选择包含应用代码的本地文件夹</div>
       </div>
     </div>
-    <div class="section-divider"></div>
-
-    <!-- Source Modals -->
-    <FolderSourceModal
-      v-if="showFolderModal"
-      @close="showFolderModal = false"
-      @browse-directory="handleBrowseDirectory"
-      @confirm="store.handleFolderConfirm"
-    />
-
-    <GithubSourceModal
-      v-if="showGithubModal"
-      @close="showGithubModal = false"
-      @confirm="store.handleGithubConfirm"
-    />
-
-    <SeedSourceModal v-if="showSeedModal" @close="showSeedModal = false" />
   </div>
 </template>
 
 <script setup>
 import { ref, nextTick, computed } from 'vue'
-import { useAppCreateStore } from '../../../stores/appCreateStore'
-import FolderSourceModal from './FolderSourceModal.vue'
-import GithubSourceModal from './GithubSourceModal.vue'
-import SeedSourceModal from './SeedSourceModal.vue'
+import { useAppCreateStore } from '@stores/appCreateStore'
 
 const props = defineProps({
   isActive: {
@@ -124,6 +53,7 @@ const availableTags = [
   '自动化工具'
 ]
 
+// Add functions to handle tag management
 function startAddCustomTag() {
   isAddingCustomTag.value = true
   nextTick(() => {
@@ -481,5 +411,181 @@ input.error {
 
 .change-button:hover {
   background-color: var(--color-hover);
+}
+
+/* GitHub Repository List Styles */
+.repo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.repo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.repo-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.repo-icon {
+  flex-shrink: 0;
+}
+
+.repo-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.repo-link:hover {
+  text-decoration: underline;
+}
+
+.repo-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.repo-default-badge {
+  background-color: var(--color-primary);
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Edit field container styles */
+.edit-field-container {
+  position: relative;
+  width: 100%;
+}
+
+.field-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  min-height: 42px;
+}
+
+.field-value {
+  flex: 1;
+  color: #374151;
+  word-break: break-word;
+}
+
+.field-value.description {
+  white-space: pre-line;
+  min-height: 60px;
+}
+
+.edit-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+  color: #4b5563;
+  background-color: #e5e7eb;
+}
+
+.edit-actions {
+  display: flex;
+  margin-top: 8px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.edit-btn.save {
+  color: #059669;
+}
+
+.edit-btn.save:hover {
+  background-color: #ecfdf5;
+}
+
+.edit-btn.cancel {
+  color: #dc2626;
+}
+
+.edit-btn.cancel:hover {
+  background-color: #fef2f2;
+}
+
+input {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-hover);
+}
+
+.folder-path-input {
+  display: flex;
+  gap: 8px;
+}
+
+.folder-path-input input {
+  flex: 1;
+}
+
+.browse-button {
+  padding: 8px 12px;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.browse-button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.source-hint {
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin-top: 8px;
+}
+
+.folder-selection-info {
+  background-color: var(--color-background-secondary, #f5f7fa);
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.5;
 }
 </style>

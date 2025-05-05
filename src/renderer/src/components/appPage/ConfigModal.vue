@@ -1,80 +1,78 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 // Props for receiving the app data and modal position
 const props = defineProps({
   app: {
     type: Object,
-    required: true,
+    required: true
   },
   modalPosition: {
     type: Object,
-    default: () => ({ top: 0, left: 0, width: 0, height: 0 }),
+    default: () => ({ top: 0, left: 0, width: 0, height: 0 })
   },
   isNewApp: {
     type: Boolean,
     default: false
   }
-});
+})
 
 // Emits for closing modal and saving changes
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save'])
 
 // Create a copy of the app data for editing
-const editedApp = ref(JSON.parse(JSON.stringify(props.app)));
+const editedApp = ref(JSON.parse(JSON.stringify(props.app)))
 
 // For handling the tags input
-const tagsInput = ref(
-  editedApp.value.tags ? editedApp.value.tags.join(', ') : ''
-);
+const tagsInput = ref(editedApp.value.tags ? editedApp.value.tags.join(', ') : '')
 
 // Create a ref for tracking saving state
-const isSaving = ref(false);
+const isSaving = ref(false)
 
 // Function to update tags when input changes
 const updateTags = () => {
   // Parse and clean the tag input
   const tagArray = tagsInput.value
     .split(',')
-    .map(tag => tag.trim())
-    .filter(tag => tag.length > 0); // Filter out empty tags
-  
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0) // Filter out empty tags
+
   // Make sure there's at least one tag
   if (tagArray.length === 0) {
     // Add a default tag if no tags are provided
-    tagArray.push('Productivity');
-    tagsInput.value = 'Productivity';
+    tagArray.push('Productivity')
+    tagsInput.value = 'Productivity'
   }
-  
+
   // Update the app's tags
-  editedApp.value.tags = tagArray;
-};
+  editedApp.value.tags = tagArray
+}
 
 // Function to save changes
 const saveChanges = () => {
   try {
     // Set saving state
-    isSaving.value = true;
-    
+    isSaving.value = true
+
     // Make sure tags are updated before saving
-    updateTags();
-    
+    updateTags()
+
     // Create a clean serializable copy to emit
-    const cleanApp = JSON.parse(JSON.stringify(editedApp.value));
-    emit('save', cleanApp);
+    const cleanApp = JSON.parse(JSON.stringify(editedApp.value))
+    emit('save', cleanApp)
   } catch (error) {
-    console.error('Error preparing app data:', error);
-    alert('Failed to prepare app data. Please try again.');
-    isSaving.value = false;
+    console.error('Error preparing app data:', error)
+    alert('Failed to prepare app data. Please try again.')
+    isSaving.value = false
   }
-};
+}
 
 // Function to close without saving
 const cancelChanges = () => {
   // Reset saving state if needed
-  isSaving.value = false;
-  emit('close');
-};
+  isSaving.value = false
+  emit('close')
+}
 
 // Configuration steps and their status
 const configSteps = computed(() => [
@@ -84,7 +82,7 @@ const configSteps = computed(() => [
     description: 'Configure the application environment',
     isComplete: ['pip', 'model', 'completed'].includes(editedApp.value.status),
     isActive: editedApp.value.status === 'setup',
-    icon: '🛠️',
+    icon: '🛠️'
   },
   {
     id: 'pip',
@@ -92,7 +90,7 @@ const configSteps = computed(() => [
     description: 'Install required packages and dependencies',
     isComplete: ['model', 'completed'].includes(editedApp.value.status),
     isActive: editedApp.value.status === 'pip',
-    icon: '📦',
+    icon: '📦'
   },
   {
     id: 'model',
@@ -100,7 +98,7 @@ const configSteps = computed(() => [
     description: 'Set up and configure models',
     isComplete: editedApp.value.status === 'completed',
     isActive: editedApp.value.status === 'model',
-    icon: '🧠',
+    icon: '🧠'
   },
   {
     id: 'completed',
@@ -108,50 +106,46 @@ const configSteps = computed(() => [
     description: 'Configuration complete and ready to use',
     isComplete: editedApp.value.status === 'completed',
     isActive: editedApp.value.status === 'completed',
-    icon: '✅',
-  },
-]);
+    icon: '✅'
+  }
+])
 
 // Update the app status
 const updateStatus = (stepId) => {
   // Only allow moving to the next step or any previous step
-  const currentStepIndex = configSteps.value.findIndex(
-    (step) => step.id === editedApp.value.status
-  );
-  const newStepIndex = configSteps.value.findIndex(
-    (step) => step.id === stepId
-  );
+  const currentStepIndex = configSteps.value.findIndex((step) => step.id === editedApp.value.status)
+  const newStepIndex = configSteps.value.findIndex((step) => step.id === stepId)
 
   if (newStepIndex <= currentStepIndex + 1) {
-    editedApp.value.status = stepId;
+    editedApp.value.status = stepId
 
     // Update progress percentage based on the step
     switch (stepId) {
       case 'setup':
-        editedApp.value.setupProgress = 25;
-        break;
+        editedApp.value.setupProgress = 25
+        break
       case 'pip':
-        editedApp.value.setupProgress = 50;
-        break;
+        editedApp.value.setupProgress = 50
+        break
       case 'model':
-        editedApp.value.setupProgress = 75;
-        break;
+        editedApp.value.setupProgress = 75
+        break
       case 'completed':
-        editedApp.value.setupProgress = 100;
-        break;
+        editedApp.value.setupProgress = 100
+        break
     }
   }
-};
+}
 
 // Function to handle file path selection
 const selectFilePath = () => {
   // In a real application, this would open a file dialog
   // For now, we'll just simulate it with a prompt
-  const newPath = prompt('Enter file path:', editedApp.value.filePath);
+  const newPath = prompt('Enter file path:', editedApp.value.filePath)
   if (newPath) {
-    editedApp.value.filePath = newPath;
+    editedApp.value.filePath = newPath
   }
-};
+}
 </script>
 
 <template>
@@ -164,15 +158,13 @@ const selectFilePath = () => {
           '--initial-top': `${modalPosition.top}px`,
           '--initial-left': `${modalPosition.left}px`,
           '--initial-width': `${modalPosition.width}px`,
-          '--initial-height': `${modalPosition.height}px`,
+          '--initial-height': `${modalPosition.height}px`
         }"
       >
         <div class="config-modal">
           <div class="config-modal-header">
             <h2>{{ isNewApp ? 'Create New App' : 'Configure App' }}</h2>
-            <button class="close-button" @click="cancelChanges" title="Close">
-              ×
-            </button>
+            <button class="close-button" @click="cancelChanges" title="Close">×</button>
           </div>
 
           <div class="config-modal-content">
@@ -197,7 +189,7 @@ const selectFilePath = () => {
                     v-model="editedApp.description"
                     placeholder="Enter app description"
                     class="form-control"
-                    rows="3"
+                    :rows="3"
                   ></textarea>
                 </div>
 
@@ -224,9 +216,7 @@ const selectFilePath = () => {
                       class="form-control"
                       readonly
                     />
-                    <button class="browse-button" @click="selectFilePath">
-                      Browse
-                    </button>
+                    <button class="browse-button" @click="selectFilePath">Browse</button>
                   </div>
                 </div>
               </div>
@@ -249,15 +239,11 @@ const selectFilePath = () => {
                           completed: step.isComplete,
                           active: step.isActive,
                           clickable:
-                            index <=
-                            configSteps.findIndex(
-                              (s) => s.id === editedApp.status
-                            ) +
-                              1,
+                            index <= configSteps.findIndex((s) => s.id === editedApp.status) + 1
                         }"
                         @click="updateStatus(step.id)"
                         :style="{
-                          left: `${(index * 100) / (configSteps.length - 1)}%`,
+                          left: `${(index * 100) / (configSteps.length - 1)}%`
                         }"
                         :title="step.name"
                       >
@@ -275,7 +261,7 @@ const selectFilePath = () => {
                     class="config-step-card"
                     :class="{
                       completed: step.isComplete,
-                      active: step.isActive,
+                      active: step.isActive
                     }"
                   >
                     <div class="step-header">
@@ -285,12 +271,8 @@ const selectFilePath = () => {
                         <p>{{ step.description }}</p>
                       </div>
                       <div class="step-status">
-                        <span v-if="step.isComplete" class="status-complete"
-                          >✓ Complete</span
-                        >
-                        <span v-else-if="step.isActive" class="status-active"
-                          >In Progress</span
-                        >
+                        <span v-if="step.isComplete" class="status-complete">✓ Complete</span>
+                        <span v-else-if="step.isActive" class="status-active">In Progress</span>
                         <span v-else class="status-pending">Pending</span>
                       </div>
                     </div>
@@ -300,19 +282,14 @@ const selectFilePath = () => {
                         class="action-button primary"
                         @click="
                           updateStatus(
-                            configSteps[
-                              configSteps.findIndex((s) => s.id === step.id) + 1
-                            ].id
+                            configSteps[configSteps.findIndex((s) => s.id === step.id) + 1].id
                           )
                         "
                         :disabled="
-                          configSteps.findIndex((s) => s.id === step.id) ===
-                          configSteps.length - 1
+                          configSteps.findIndex((s) => s.id === step.id) === configSteps.length - 1
                         "
                       >
-                        {{
-                          step.id === 'completed' ? 'Finalize' : 'Complete Step'
-                        }}
+                        {{ step.id === 'completed' ? 'Finalize' : 'Complete Step' }}
                       </button>
                     </div>
                   </div>
@@ -322,7 +299,9 @@ const selectFilePath = () => {
           </div>
 
           <div class="config-modal-footer">
-            <button class="cancel-button" @click="cancelChanges" :disabled="isSaving">Cancel</button>
+            <button class="cancel-button" @click="cancelChanges" :disabled="isSaving">
+              Cancel
+            </button>
             <button class="save-button" @click="saveChanges" :disabled="isSaving">
               <span v-if="isSaving" class="loading-dot-container">
                 <span class="loading-dot"></span>
@@ -794,11 +773,13 @@ const selectFilePath = () => {
 }
 
 @keyframes loading-dot {
-  0%, 80%, 100% { 
+  0%,
+  80%,
+  100% {
     transform: scale(0);
-  } 
-  40% { 
-    transform: scale(1.0);
+  }
+  40% {
+    transform: scale(1);
   }
 }
 

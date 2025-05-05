@@ -1,44 +1,42 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 // Props for receiving the app data
 const props = defineProps({
   app: {
     type: Object,
-    required: true,
-  },
-});
+    required: true
+  }
+})
 
 // Emits for closing modal and saving changes
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save'])
 
 // Create a copy of the app data for editing
-const editedApp = ref({ ...props.app });
+const editedApp = ref({ ...props.app })
 
 // For handling the tags input
-const tagsInput = ref(
-  editedApp.value.tags ? editedApp.value.tags.join(', ') : ''
-);
+const tagsInput = ref(editedApp.value.tags ? editedApp.value.tags.join(', ') : '')
 
 // Function to update tags when input changes
 const updateTags = () => {
   editedApp.value.tags = tagsInput.value
     .split(',')
     .map((tag) => tag.trim())
-    .filter((tag) => tag);
-};
+    .filter((tag) => tag)
+}
 
 // Function to save changes
 const saveChanges = () => {
   // Make sure tags are updated before saving
-  updateTags();
-  emit('save', editedApp.value);
-};
+  updateTags()
+  emit('save', editedApp.value)
+}
 
 // Function to close without saving
 const cancelChanges = () => {
-  emit('close');
-};
+  emit('close')
+}
 
 // Configuration steps and their status
 const configSteps = computed(() => [
@@ -48,7 +46,7 @@ const configSteps = computed(() => [
     description: 'Configure the application environment',
     isComplete: ['pip', 'model', 'completed'].includes(editedApp.value.status),
     isActive: editedApp.value.status === 'setup',
-    icon: '🛠️',
+    icon: '🛠️'
   },
   {
     id: 'pip',
@@ -56,7 +54,7 @@ const configSteps = computed(() => [
     description: 'Install required packages and dependencies',
     isComplete: ['model', 'completed'].includes(editedApp.value.status),
     isActive: editedApp.value.status === 'pip',
-    icon: '📦',
+    icon: '📦'
   },
   {
     id: 'model',
@@ -64,7 +62,7 @@ const configSteps = computed(() => [
     description: 'Set up and configure models',
     isComplete: editedApp.value.status === 'completed',
     isActive: editedApp.value.status === 'model',
-    icon: '🧠',
+    icon: '🧠'
   },
   {
     id: 'completed',
@@ -72,59 +70,53 @@ const configSteps = computed(() => [
     description: 'Configuration complete and ready to use',
     isComplete: editedApp.value.status === 'completed',
     isActive: editedApp.value.status === 'completed',
-    icon: '✅',
-  },
-]);
+    icon: '✅'
+  }
+])
 
 // Update the app status
 const updateStatus = (stepId) => {
   // Only allow moving to the next step or any previous step
-  const currentStepIndex = configSteps.value.findIndex(
-    (step) => step.id === editedApp.value.status
-  );
-  const newStepIndex = configSteps.value.findIndex(
-    (step) => step.id === stepId
-  );
+  const currentStepIndex = configSteps.value.findIndex((step) => step.id === editedApp.value.status)
+  const newStepIndex = configSteps.value.findIndex((step) => step.id === stepId)
 
   if (newStepIndex <= currentStepIndex + 1) {
-    editedApp.value.status = stepId;
+    editedApp.value.status = stepId
 
     // Update progress percentage based on the step
     switch (stepId) {
       case 'setup':
-        editedApp.value.setupProgress = 25;
-        break;
+        editedApp.value.setupProgress = 25
+        break
       case 'pip':
-        editedApp.value.setupProgress = 50;
-        break;
+        editedApp.value.setupProgress = 50
+        break
       case 'model':
-        editedApp.value.setupProgress = 75;
-        break;
+        editedApp.value.setupProgress = 75
+        break
       case 'completed':
-        editedApp.value.setupProgress = 100;
-        break;
+        editedApp.value.setupProgress = 100
+        break
     }
   }
-};
+}
 
 // Function to handle file path selection
 const selectFilePath = () => {
   // In a real application, this would open a file dialog
   // For now, we'll just simulate it with a prompt
-  const newPath = prompt('Enter file path:', editedApp.value.filePath);
+  const newPath = prompt('Enter file path:', editedApp.value.filePath)
   if (newPath) {
-    editedApp.value.filePath = newPath;
+    editedApp.value.filePath = newPath
   }
-};
+}
 </script>
 
 <template>
   <div class="config-modal">
     <div class="config-modal-header">
       <h2>Configure App</h2>
-      <button class="close-button" @click="cancelChanges" title="Close">
-        ×
-      </button>
+      <button class="close-button" @click="cancelChanges" title="Close">×</button>
     </div>
 
     <div class="config-modal-content">
@@ -149,7 +141,7 @@ const selectFilePath = () => {
               v-model="editedApp.description"
               placeholder="Enter app description"
               class="form-control"
-              rows="3"
+              :rows="3"
             ></textarea>
           </div>
 
@@ -176,9 +168,7 @@ const selectFilePath = () => {
                 class="form-control"
                 readonly
               />
-              <button class="browse-button" @click="selectFilePath">
-                Browse
-              </button>
+              <button class="browse-button" @click="selectFilePath">Browse</button>
             </div>
           </div>
         </div>
@@ -200,14 +190,11 @@ const selectFilePath = () => {
                   :class="{
                     completed: step.isComplete,
                     active: step.isActive,
-                    clickable:
-                      index <=
-                      configSteps.findIndex((s) => s.id === editedApp.status) +
-                        1,
+                    clickable: index <= configSteps.findIndex((s) => s.id === editedApp.status) + 1
                   }"
                   @click="updateStatus(step.id)"
                   :style="{
-                    left: `${(index * 100) / (configSteps.length - 1)}%`,
+                    left: `${(index * 100) / (configSteps.length - 1)}%`
                   }"
                   :title="step.name"
                 >
@@ -225,7 +212,7 @@ const selectFilePath = () => {
               class="config-step-card"
               :class="{
                 completed: step.isComplete,
-                active: step.isActive,
+                active: step.isActive
               }"
             >
               <div class="step-header">
@@ -235,12 +222,8 @@ const selectFilePath = () => {
                   <p>{{ step.description }}</p>
                 </div>
                 <div class="step-status">
-                  <span v-if="step.isComplete" class="status-complete"
-                    >✓ Complete</span
-                  >
-                  <span v-else-if="step.isActive" class="status-active"
-                    >In Progress</span
-                  >
+                  <span v-if="step.isComplete" class="status-complete">✓ Complete</span>
+                  <span v-else-if="step.isActive" class="status-active">In Progress</span>
                   <span v-else class="status-pending">Pending</span>
                 </div>
               </div>
@@ -249,15 +232,10 @@ const selectFilePath = () => {
                 <button
                   class="action-button primary"
                   @click="
-                    updateStatus(
-                      configSteps[
-                        configSteps.findIndex((s) => s.id === step.id) + 1
-                      ].id
-                    )
+                    updateStatus(configSteps[configSteps.findIndex((s) => s.id === step.id) + 1].id)
                   "
                   :disabled="
-                    configSteps.findIndex((s) => s.id === step.id) ===
-                    configSteps.length - 1
+                    configSteps.findIndex((s) => s.id === step.id) === configSteps.length - 1
                   "
                 >
                   {{ step.id === 'completed' ? 'Finalize' : 'Complete Step' }}

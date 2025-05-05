@@ -8,7 +8,7 @@ import PythonEnvironmentStep from './PythonEnvironmentStep.vue'
 import SeedSourceModal from './SeedSourceModal.vue'
 import StepsSidebar from './StepsSidebar.vue'
 import AppSourceSelectionModal from './AppSourceSelectionModal.vue'
-import AppCreateModalPlusFolder from './AppCreateModalPlusFolder.vue'
+import AppCreateModalPlusFolder from './FolderSimple/AppCreateModalPlusFolderSimple.vue'
 import AppCreateModalPlusGitHub from './AppCreateModalPlusGitHub.vue'
 import AppCreateModalPlusSeed from './AppCreateModalPlusSeed.vue'
 

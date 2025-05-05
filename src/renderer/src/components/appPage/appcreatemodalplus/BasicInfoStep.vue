@@ -118,7 +118,7 @@
         v-model="store.appData.description"
         inputType="textarea"
         placeholder="描述一下这个应用的功能和用途"
-        rows="3"
+        :rows="3"
         emptyText="未设置描述"
       />
     </div>

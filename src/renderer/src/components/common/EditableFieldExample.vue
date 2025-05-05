@@ -18,7 +18,7 @@
         v-model="userData.bio"
         inputType="textarea"
         placeholder="请输入个人简介"
-        rows="4"
+        :rows="4"
         emptyText="未设置个人简介"
       />
     </div>

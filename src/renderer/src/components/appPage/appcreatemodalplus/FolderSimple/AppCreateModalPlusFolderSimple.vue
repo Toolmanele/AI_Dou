@@ -26,14 +26,6 @@
           @create="createApp"
         />
 
-        <!-- Seed List -->
-        <SeedList
-          :show="showSeedList"
-          @close="showSeedList = false"
-          @select="handleSeedSelected"
-          @import="handleSeedImport"
-        />
-
         <!-- Step content -->
         <div class="content-container" ref="contentContainer" @scroll="handleScroll">
           <div class="step-content">
@@ -43,23 +35,18 @@
               :isActive="currentStep === 0"
               @browse-directory="browseDirectory"
             />
-
-            <!-- Step 2: GitHub Setup -->
-            <!-- <GitHubSetupStep ref="step1" :isActive="currentStep === 1" /> -->
-
-            <!-- Step 3: Directory Setup -->
-            <DirectorySetupStep
-              ref="step1"
-              :isActive="currentStep === 2"
-              @browse-directory="browseDirectory"
-            />
-
-            <!-- Step 4: Python Environment -->
+            <!-- Step 2: Python Environment -->
             <PythonEnvironmentStep
-              ref="step2"
+              ref="step1"
               :isActive="currentStep === 3"
               @install-environment="installEnvironment"
               @go-to-settings="goToSettings"
+            />
+            <!-- Step 2: Directory Setup -->
+            <DirectorySetupStep
+              ref="step2"
+              :isActive="currentStep === 2"
+              @browse-directory="browseDirectory"
             />
           </div>
         </div>
@@ -70,12 +57,10 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import { useAppCreateStore } from '../../../stores/appCreateStore'
-import { useSettingsStore } from '../../../stores/settings'
-import formatData from '../../../services/formatData'
-import electronStore from '../../../services/electronStore'
-import SeedList from '../SeedList.vue'
-console.log('AppCreateModalPlusFolder Show')
+import { useAppCreateStore } from '@stores/appCreateStore'
+import { useSettingsStore } from '@stores/settings'
+import formatData from '@services/formatData'
+import electronStore from '@services/electronStore'
 const {
   getFastestPipMirrorUrl,
   formatPipUrl,
@@ -85,11 +70,10 @@ const {
 } = formatData
 
 // Import components
-import BasicInfoStep from './BasicInfoStep.vue'
-import GitHubSetupStep from './GitHubSetupStep.vue'
-import DirectorySetupStep from './DirectorySetupStep.vue'
-import PythonEnvironmentStep from './FolderSimple/PythonEnvironmentStepPlusFolder.vue'
-import StepsSidebar from './StepsSidebar.vue'
+import BasicInfoStep from './BasicInfoStepSimple.vue'
+import DirectorySetupStep from '../DirectorySetupStep.vue'
+import PythonEnvironmentStep from './PythonEnvironmentStepPlusFolder.vue'
+import StepsSidebar from './StepsSidebarSimple.vue'
 
 // Get the stores
 const store = useAppCreateStore()

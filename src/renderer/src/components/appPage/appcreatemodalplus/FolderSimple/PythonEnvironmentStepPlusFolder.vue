@@ -161,10 +161,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
-import { useAppCreateStore } from '../../../stores/appCreateStore'
-import formatData from '../../../services/formatData'
-import PythonEnvironmentModal from './PythonEnvironmentModal.vue'
+import { ref } from 'vue'
+import { useAppCreateStore } from '@stores/appCreateStore'
+import formatData from '@services/formatData'
+import PythonEnvironmentModal from '../PythonEnvironmentModal.vue'
 
 const props = defineProps({
   isActive: {
