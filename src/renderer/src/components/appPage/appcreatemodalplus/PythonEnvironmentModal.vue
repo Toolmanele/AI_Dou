@@ -44,23 +44,30 @@
                 </button>
               </div>
             </div>
-            <label>PyTorch配置命令</label>
+            <div class="pip-label-row">
+              <label>PyTorch配置命令</label>
+              <button class="add-command" @click="addPytorchCommand">+</button>
+            </div>
             <div class="config-commands">
               <div
                 v-for="(cmd, cmdIndex) in environment.pytorch.installCommands"
                 :key="cmdIndex"
                 class="command-item"
               >
-                <div class="command-display">
+                <div class="command-display" v-if="!pytorchCommandsEditMode[cmdIndex]">
                   {{ getFormattedCommands([cmd], 'pytorch', environment.pytorch.source)[0] }}
+                  <button class="edit-command-button" @click="togglePytorchCommandEdit(cmdIndex)">
+                    <span title="编辑">✎</span>
+                  </button>
                 </div>
                 <textarea
                   ref="commandTextareas"
                   :key="`pytorch-modal-${cmdIndex}`"
                   v-model="environment.pytorch.installCommands[cmdIndex]"
                   :rows="Math.max(1, cmd.split('\n').length)"
-                  class="command-textarea hidden"
+                  :class="['command-textarea', { hidden: !pytorchCommandsEditMode[cmdIndex] }]"
                   @input="autoResizeTextarea($event.target)"
+                  @blur="togglePytorchCommandEdit(cmdIndex)"
                 ></textarea>
                 <button
                   v-if="environment.pytorch.installCommands.length > 1"
@@ -187,6 +194,9 @@ const emit = defineEmits(['close', 'save'])
 // Python versions available for selection
 const pythonVersions = ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
 
+// Edit mode for PyTorch commands
+const pytorchCommandsEditMode = ref({})
+
 // Error state
 const errors = reactive({
   startCommand: ''
@@ -206,6 +216,22 @@ function resizeAllTextareas() {
   })
 }
 
+// Toggle edit mode for PyTorch commands
+function togglePytorchCommandEdit(index) {
+  pytorchCommandsEditMode.value[index] = !pytorchCommandsEditMode.value[index]
+  if (pytorchCommandsEditMode.value[index]) {
+    nextTick(() => {
+      const textarea = commandTextareas.value.find(
+        (el) => el && el.getAttribute('key') === `pytorch-modal-${index}`
+      )
+      if (textarea) {
+        textarea.focus()
+        autoResizeTextarea(textarea)
+      }
+    })
+  }
+}
+
 // Source update functions
 function updatePytorchSource(source) {
   props.environment.pytorch.source = source
@@ -218,6 +244,10 @@ function updatePipSource(source) {
 // Command management functions
 function addPytorchCommand() {
   props.environment.pytorch.installCommands.push('')
+  nextTick(() => {
+    const newIndex = props.environment.pytorch.installCommands.length - 1
+    pytorchCommandsEditMode.value[newIndex] = true
+  })
 }
 
 function removePytorchCommand(index) {
@@ -265,8 +295,26 @@ watch(
   { deep: true }
 )
 
+// Watch for changes to PyTorch commands length
+watch(
+  () => props.environment.pytorch.installCommands.length,
+  (newLength) => {
+    // Reset edit modes based on new command array length
+    const newEditModes = {}
+    for (let i = 0; i < newLength; i++) {
+      newEditModes[i] = pytorchCommandsEditMode.value[i] || false
+    }
+    pytorchCommandsEditMode.value = newEditModes
+  }
+)
+
 onMounted(() => {
   resizeAllTextareas()
+
+  // Initialize PyTorch command edit modes
+  props.environment.pytorch.installCommands.forEach((_, index) => {
+    pytorchCommandsEditMode.value[index] = false
+  })
 })
 </script>
 
@@ -535,6 +583,7 @@ input[type='text'].error {
 }
 
 .command-display {
+  position: relative;
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
@@ -612,5 +661,27 @@ input[type='text'].error {
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text);
+}
+
+.edit-command-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 4px;
+  font-size: 14px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-command-button:hover {
+  opacity: 1;
+  background-color: var(--color-hover);
+  color: var(--color-primary);
 }
 </style>
