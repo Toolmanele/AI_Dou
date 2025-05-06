@@ -4,13 +4,6 @@
       <div class="modal-header">
         <h2>{{ store.appData.id ? '编辑应用' : '创建新应用' }}</h2>
         <div class="header-actions">
-          <!-- <button
-            class="seed-button"
-            @click.stop="toggleSeedList"
-            title="显示种子列表"
-          >
-            <span class="seed-icon">🌱</span>
-          </button> -->
           <button class="close-button" @click="closeModal">×</button>
         </div>
       </div>

@@ -4,13 +4,6 @@
       <div class="modal-header">
         <h2>{{ store.appData.id ? '编辑应用' : '创建新应用' }}</h2>
         <div class="header-actions">
-          <!-- <button
-            class="seed-button"
-            @click.stop="toggleSeedList"
-            title="显示种子列表"
-          >
-            <span class="seed-icon">🌱</span>
-          </button> -->
           <button class="close-button" @click="closeModal">×</button>
         </div>
       </div>
@@ -70,13 +63,12 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import { useAppCreateStore } from '../../../stores/appCreateStore'
-import { useSettingsStore } from '../../../stores/settings'
-import formatData from '../../../services/formatData'
-import electronStore from '../../../services/electronStore'
-import SeedList from '../SeedList.vue'
+import { useAppCreateStore } from '@stores/appCreateStore'
+import { useSettingsStore } from '@stores/settings'
+import formatData from '@services/formatData'
+import electronStore from '@services/electronStore'
+// import SeedList from '../SeedList.vue'
 console.log('AppCreateModalPlusGitHub Show')
-console.log('formatData:', formatData)
 const {
   getFastestPipMirrorUrl,
   formatPipUrl,
@@ -86,11 +78,11 @@ const {
 } = formatData
 
 // Import components
-import BasicInfoStep from './BasicInfoStep.vue'
-import GitHubSetupStep from './GitHubSetupStep.vue'
-import DirectorySetupStep from './DirectorySetupStep.vue'
-import PythonEnvironmentStep from './PythonEnvironmentStepPlus.vue'
-import StepsSidebar from './StepsSidebar.vue'
+import BasicInfoStep from './BasicInfoStepSimple.vue'
+// import GitHubSetupStep from './GitHubSetupStep.vue'
+import DirectorySetupStep from '../DirectorySetupStep.vue'
+import PythonEnvironmentStep from '../PythonEnvironmentStepPlus.vue'
+import StepsSidebar from '../StepsSidebar.vue'
 
 // Get the stores
 const store = useAppCreateStore()

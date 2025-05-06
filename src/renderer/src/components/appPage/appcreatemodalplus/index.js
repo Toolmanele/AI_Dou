@@ -9,7 +9,7 @@ import SeedSourceModal from './SeedSourceModal.vue'
 import StepsSidebar from './StepsSidebar.vue'
 import AppSourceSelectionModal from './AppSourceSelectionModal.vue'
 import AppCreateModalPlusFolder from './FolderSimple/AppCreateModalPlusFolderSimple.vue'
-import AppCreateModalPlusGitHub from './AppCreateModalPlusGitHub.vue'
+import AppCreateModalPlusGitHub from './GithubSimple/AppCreateModalPlusGitHub.vue'
 import AppCreateModalPlusSeed from './AppCreateModalPlusSeed.vue'
 
 export {

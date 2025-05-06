@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
-
+import { appDataTemplate, pythonEnvTemplate, pytorchSource, pipSource } from './templateData'
 export const useAiDouAppStore = defineStore('aiDouApp', {
   state: () => ({
     apps: [],
