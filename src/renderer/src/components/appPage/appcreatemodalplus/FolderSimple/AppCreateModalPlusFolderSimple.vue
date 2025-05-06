@@ -71,7 +71,7 @@ const {
 
 // Import components
 import BasicInfoStep from './BasicInfoStepSimple.vue'
-import DirectorySetupStep from '../DirectorySetupStep.vue'
+import DirectorySetupStep from './DirectorySetupStepSimple.vue'
 import PythonEnvironmentStep from './PythonEnvironmentStepPlusFolder.vue'
 import StepsSidebar from './StepsSidebarSimple.vue'
 

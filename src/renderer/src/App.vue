@@ -147,6 +147,7 @@ watch(
   /* 浅色主题变量 */
   --color-primary: #4c6ef5;
   --color-primary-light: #6983f8;
+  --color-primary-light-light: #8ba6ff;
   --color-primary-dark: #3b5bdb;
   --color-secondary: #334155;
   --color-secondary-light: #475569;

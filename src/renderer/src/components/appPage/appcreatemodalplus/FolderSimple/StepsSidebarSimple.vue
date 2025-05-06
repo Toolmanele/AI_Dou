@@ -12,8 +12,8 @@
         @click="handleStepClick(index)"
       >
         <div class="step-marker">
-          <span v-if="index < currentStep">✓</span>
-          <span v-else>{{ index + 1 }}</span>
+          <!-- <span v-if="index < currentStep">✓</span> -->
+          <span>{{ index + 1 }}</span>
         </div>
         <div class="step-title">{{ step.title }}</div>
       </div>
@@ -132,7 +132,7 @@ function handleActionClick() {
 }
 
 .steps {
-  padding-top: 20px;
+  /* padding-top: 20px; */
 }
 
 .step {
@@ -145,14 +145,16 @@ function handleActionClick() {
 }
 
 .step:hover {
-  background-color: var(--color-hover);
+  color: var(--color-card-hover);
+  background-color: var(--color-primary-light-light);
 }
 
 .step.active {
-  background-color: var(--color-active);
+  color: var(--color-card);
+  background-color: var(--color-primary);
 }
 
-.step.active::before {
+/* .step.active::before {
   content: '';
   position: absolute;
   left: 0;
@@ -160,14 +162,14 @@ function handleActionClick() {
   bottom: 0;
   width: 3px;
   background-color: var(--color-primary);
-}
+} */
 
 .step-marker {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   background-color: var(--color-text-lighter);
-  color: var(--color-card);
+  color: var(--color-text-normal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +178,8 @@ function handleActionClick() {
 }
 
 .step.active .step-marker {
-  background-color: var(--color-primary);
+  color: var(--color-text);
+  background-color: var(--color-background);
 }
 
 .step.done .step-marker {
@@ -189,7 +192,7 @@ function handleActionClick() {
 }
 
 .step.active .step-title {
-  color: var(--color-text-strong);
+  /* color: var(--color-card); */
   font-weight: 500;
 }
 
