@@ -1,12 +1,17 @@
 <template>
   <div id="step-3" ref="stepRef" class="step-form" :class="{ active: isActive }">
     <div class="step-header">
-      <field-hint
-        hint="可以添加多个Python环境，适用于不同场景；默认环境将在应用启动时使用；安装命令按顺序执行，通常先安装依赖再启动应用；如果环境尚未安装，可以点击安装按钮自动配置"
-        position="right"
-      >
+      <Tips position="right">
         <h3 class="step-title">Python 环境</h3>
-      </field-hint>
+        <template #content>
+          <ul class="tips-list">
+            <li>可以添加多个Python环境，适用于不同场景</li>
+            <li>默认环境将在应用启动时使用</li>
+            <li>安装命令按顺序执行，通常先安装依赖再启动应用</li>
+            <li>如果环境尚未安装，可以点击安装按钮自动配置</li>
+          </ul>
+        </template>
+      </Tips>
       <div class="header-actions">
         <button class="action-button" @click="addEnvironment">+ 添加环境</button>
         <button class="action-button" @click="showImportModal = true">
@@ -145,8 +150,8 @@ import { ref } from 'vue'
 import { useAppCreateStore } from '@stores/appCreateStore'
 import formatData from '@services/formatData'
 import PythonEnvironmentModal from '../PythonEnvironmentModal.vue'
-import { FieldHint } from '@common'
-
+import { Tips } from '@common'
+console.log('PythonEnvironmentStepPlusFolder', Tips)
 const props = defineProps({
   isActive: {
     type: Boolean,
@@ -160,6 +165,12 @@ const stepRef = ref(null)
 
 // Python versions available for selection
 const pythonVersions = ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+
+// 提示文本（分行显示）
+const pythonTipsText = `• 可以添加多个Python环境，适用于不同场景
+• 默认环境将在应用启动时使用
+• 安装命令按顺序执行，通常先安装依赖再启动应用
+• 如果环境尚未安装，可以点击安装按钮自动配置`
 
 // Modal states
 const showEnvModal = ref(false)
@@ -811,5 +822,22 @@ defineExpose({
   font-size: 22px;
   cursor: pointer;
   color: var(--color-text);
+}
+
+.tips-list {
+  width: fit-content;
+  margin: 0;
+  padding: 0 0 0 18px;
+  list-style-type: disc;
+  text-align: left;
+}
+
+.tips-list li {
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.tips-list li:last-child {
+  margin-bottom: 0;
 }
 </style>

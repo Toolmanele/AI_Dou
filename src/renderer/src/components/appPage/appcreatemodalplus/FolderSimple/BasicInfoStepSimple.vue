@@ -4,9 +4,12 @@
     <!-- Source Selection -->
     <div class="form-group">
       <div class="form-group">
-        <field-hint hint="选择本地应用代码文件夹" position="right">
+        <Tips position="right">
           文件夹路径 <span class="required">*</span>
-        </field-hint>
+          <template #content>
+            <div class="tips-content">选择本地应用代码文件夹</div>
+          </template>
+        </Tips>
         <div class="folder-path-input">
           <input type="text" v-model="folderPath" placeholder="应用文件夹路径" readonly />
           <button class="browse-button" @click="browseFolder">浏览...</button>
@@ -19,7 +22,7 @@
 <script setup>
 import { ref, nextTick, computed } from 'vue'
 import { useAppCreateStore } from '@stores/appCreateStore'
-import { FieldHint } from '@common'
+import { Tips } from '@common'
 
 const props = defineProps({
   isActive: {
@@ -127,7 +130,7 @@ function getGitSummary() {
 
 <style scoped>
 .step-form {
-  padding: 20px 0;
+  /* padding: 20px 0; */
   margin-bottom: 20px;
   border-radius: 8px;
   transition: background-color 0.3s ease;
@@ -138,7 +141,9 @@ function getGitSummary() {
   margin-left: -20px;
   margin-right: -20px;
 }
-
+.tips-content {
+  white-space: nowrap;
+}
 .form-group {
   display: flex;
   flex-direction: column;
@@ -494,7 +499,7 @@ input.error {
 }
 
 .field-value.description {
-  white-space: pre-line;
+  white-space: nowrap;
   min-height: 60px;
 }
 

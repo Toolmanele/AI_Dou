@@ -102,8 +102,9 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   margin-left: 8px;
-  white-space: nowrap;
-  max-width: none;
+  white-space: pre-wrap;
+  max-width: 280px;
+  text-align: left;
 }
 
 .tooltip-container .tooltip[class*='bottom'] {

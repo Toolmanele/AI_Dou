@@ -1,11 +1,14 @@
 <template>
   <div class="field-hint">
-    <tooltip v-if="hint" position="right">
+    <tooltip v-if="hint" :position="position">
       <label class="field-label">
         <slot></slot>
       </label>
       <template #content>
-        <div class="source-hint">{{ hint }}</div>
+        <div class="source-hint" v-if="typeof hint === 'string'">{{ hint }}</div>
+        <div class="source-hint" v-else>
+          <slot name="hint-content"></slot>
+        </div>
       </template>
     </tooltip>
     <label v-else class="field-label">
@@ -64,7 +67,7 @@ export default {
 /* Source hint styling */
 .source-hint {
   font-size: 13px;
-  white-space: nowrap;
+  white-space: pre-wrap;
   line-height: 1.4;
 }
 </style>
