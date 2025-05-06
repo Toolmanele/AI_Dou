@@ -168,8 +168,8 @@ function handleActionClick() {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: var(--color-text-lighter);
-  color: var(--color-text-normal);
+  background-color: var(--color-primary);
+  color: var(--color-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -182,9 +182,9 @@ function handleActionClick() {
   background-color: var(--color-background);
 }
 
-.step.done .step-marker {
+/* .step.done .step-marker {
   background-color: var(--color-success);
-}
+} */
 
 .step-title {
   font-size: 14px;

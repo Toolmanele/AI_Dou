@@ -1,25 +1,24 @@
 import { defineStore } from 'pinia'
 import { v4 as uuidv4 } from 'uuid'
 import { appDataTemplate, pythonEnvTemplate, pytorchSource, pipSource } from './templateData'
-export const useAiDouCreateAppStore = defineStore('aiDouCreateApp', {
+export default defineStore('aiDouCreateApp', {
   state: () => ({
-    creatingApp: null
+    creatingApp: {}
   }),
   getters: {},
   actions: {
-    createApp(type) {
-      let id = uuidv4()
-      let appName = ''
-      let appFolderPath = ''
-      if (type === 'folder') {
-        // check folder path,并返回 basename
-        appName = await window.electronAPI.getFolderBasename(appFolderPath)
-      }
+    resetApp() {
+      this.creatingApp = {}
+    },
+    createApp(source) {
       this.creatingApp = {
         ...appDataTemplate,
-        id,
-        pythonEnvironments: [...pythonEnvTemplate]
+        from: source
       }
+      console.log('createApp', this.creatingApp)
+    },
+    setSource(type) {
+      this.creatingApp.from = type
     },
     cancelCreateApp() {
       this.creatingApp = null

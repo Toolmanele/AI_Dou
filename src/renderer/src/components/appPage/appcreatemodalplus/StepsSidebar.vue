@@ -7,7 +7,7 @@
         class="step"
         :class="{
           active: currentStep === index,
-          done: index < currentStep,
+          done: index < currentStep
         }"
         @click="handleStepClick(index)"
       >
@@ -34,10 +34,7 @@
           <span class="create-text">
             {{ actionButtonText }}
           </span>
-          <span
-            v-if="isConfigMode ? isSaving : isCreating"
-            class="loading-icon"
-          ></span>
+          <span v-if="isConfigMode ? isSaving : isCreating" class="loading-icon"></span>
         </button>
       </div>
     </div>
@@ -45,46 +42,46 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed } from 'vue'
 
 // Props
 const props = defineProps({
   currentStep: {
     type: Number,
-    required: true,
+    required: true
   },
   canCreateApp: {
     type: Boolean,
-    default: false,
+    default: false
   },
   canSaveConfig: {
     type: Boolean,
-    default: false,
+    default: false
   },
   isCreating: {
     type: Boolean,
-    default: false,
+    default: false
   },
   isSaving: {
     type: Boolean,
-    default: false,
+    default: false
   },
   isConfigMode: {
     type: Boolean,
-    default: false,
-  },
-});
+    default: false
+  }
+})
 
 // Emits
-const emit = defineEmits(["step-change", "reset", "create", "save"]);
+const emit = defineEmits(['step-change', 'reset', 'create', 'save'])
 
 // Computed steps based on mode
 const steps = computed(() => {
   const baseSteps = [
-    { title: "基本信息", key: "basic" },
-    { title: "目录设置", key: "directory" },
-    { title: "Python环境", key: "python" },
-  ];
+    { title: '基本信息', key: 'basic' },
+    { title: '目录设置', key: 'directory' },
+    { title: 'Python环境', key: 'python' }
+  ]
 
   // If not in config mode, add GitHub setup step
   // if (!props.isConfigMode) {
@@ -92,32 +89,32 @@ const steps = computed(() => {
   //   baseSteps.splice(1, 0, { title: "GitHub设置", key: "github" });
   // }
 
-  return baseSteps;
-});
+  return baseSteps
+})
 
 // Compute the action button text
 const actionButtonText = computed(() => {
   if (props.isConfigMode) {
-    return props.isSaving ? "保存中..." : "保存配置";
+    return props.isSaving ? '保存中...' : '保存配置'
   } else {
-    return props.isCreating ? "创建中..." : "创建应用";
+    return props.isCreating ? '创建中...' : '创建应用'
   }
-});
+})
 
 // Handle step click
 function handleStepClick(index) {
-  emit("step-change", index);
+  emit('step-change', index)
 }
 
 // Handle action button click
 function handleActionClick() {
   if (props.isConfigMode) {
     if (!props.isSaving && props.canSaveConfig) {
-      emit("save");
+      emit('save')
     }
   } else {
     if (!props.isCreating && props.canCreateApp) {
-      emit("create");
+      emit('create')
     }
   }
 }
@@ -156,7 +153,7 @@ function handleActionClick() {
 }
 
 .step.active::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 0;
@@ -169,7 +166,7 @@ function handleActionClick() {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: var(--color-text-lighter);
+  background-color: var(--color-primary);
   color: var(--color-card);
   display: flex;
   align-items: center;

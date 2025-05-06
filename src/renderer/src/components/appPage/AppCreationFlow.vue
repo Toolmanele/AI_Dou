@@ -9,7 +9,7 @@
 
     <!-- App Creation Modal -->
     <AppCreateModalPlusFolder
-      v-if="showAppCreateModal && store.appData.from === 'folder'"
+      v-if="showAppCreateModal && store.creatingApp.from === 'folder'"
       :existingApp="existingApp"
       :isEditing="isEditing"
       @close="closeAppCreateModal"
@@ -20,7 +20,7 @@
 
     <!-- App Creation Modal -->
     <AppCreateModalPlusGitHub
-      v-if="showAppCreateModal && store.appData.from === 'github'"
+      v-if="showAppCreateModal && store.creatingApp.from === 'github'"
       :existingApp="existingApp"
       :isEditing="isEditing"
       @close="closeAppCreateModal"
@@ -31,7 +31,7 @@
 
     <!-- App Creation Modal -->
     <AppCreateModalPlusSeed
-      v-if="showAppCreateModal && store.appData.from === 'seed'"
+      v-if="showAppCreateModal && store.creatingApp.from === 'seed'"
       :existingApp="existingApp"
       :isEditing="isEditing"
       @close="closeAppCreateModal"
@@ -52,9 +52,9 @@ import {
   AppCreateModalPlusGitHub,
   AppCreateModalPlusSeed
 } from './appcreatemodalplus'
-import { useAppCreateStore } from '../../stores/appCreateStore'
+import createAppStore from '@stores/ai_dou_createApp'
 
-const store = useAppCreateStore()
+const store = createAppStore()
 
 // Props
 const props = defineProps({

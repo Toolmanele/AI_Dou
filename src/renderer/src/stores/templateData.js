@@ -49,7 +49,7 @@ export const appDataTemplate = {
   // 种子数据
   seedData: null,
   // Python 环境配置
-  pythonEnvironments: pythonEnvTemplate
+  pythonEnvironments: []
 }
 export const pytorchSource = [
   { name: '官方', url: 'download.pytorch.org/whl' },

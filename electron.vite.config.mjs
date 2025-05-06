@@ -16,7 +16,8 @@ export default defineConfig({
         '@stores': resolve('src/renderer/src/stores'),
         '@services': resolve('src/renderer/src/services'),
         '@components': resolve('src/renderer/src/components'),
-        '@common': resolve('src/renderer/src/components/common')
+        '@common': resolve('src/renderer/src/components/common'),
+        '@electronAPI': resolve('src/renderer/src/electronAPI')
       }
     },
     plugins: [vue()]

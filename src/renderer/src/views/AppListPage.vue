@@ -5,12 +5,12 @@ import TagSelector from '../components/appPage/TagSelector.vue'
 import AppList from '../components/appPage/AppList.vue'
 import AppInstallationModal from '../components/appPage/AppInstallationModal.vue'
 import BackgroundInstallationIndicator from '../components/appPage/BackgroundInstallationIndicator.vue'
-import { useAppCreateStore } from '../stores/appCreateStore'
-import { useAppStore } from '../stores/app'
+import useAiDouCreateAppStore from '@stores/ai_dou_createApp'
+import { useAppStore } from '@stores/app'
 
 // 使用 appStore 集中管理应用数据
 const appStore = useAppStore()
-const appCreateStore = useAppCreateStore()
+const appCreateStore = useAiDouCreateAppStore()
 
 // 使用计算属性从 store 获取 apps 数据，保持响应式
 const apps = computed(() => appStore.apps)
@@ -318,9 +318,7 @@ const cloneApp = async (app, event) => {
 
 // Update the openCreateAppModal function to use the appList ref
 const openCreateAppModal = () => {
-  console.log('openCreateAppModal')
-  appCreateStore.resetForm()
-
+  appCreateStore.resetApp()
   // Use the AppList component to access the AppCreationFlow
   if (appListRef.value) {
     appListRef.value.openCreateAppFlow()

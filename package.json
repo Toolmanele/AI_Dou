@@ -29,6 +29,7 @@
     "node-pty": "1.0.0",
     "pinia": "^3.0.1",
     "systeminformation": "^5.25.11",
+    "uuid": "^11.1.0",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5",
     "vuedraggable": "^4.1.0"

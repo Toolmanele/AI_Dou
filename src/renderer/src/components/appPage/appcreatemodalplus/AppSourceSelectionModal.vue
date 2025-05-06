@@ -58,9 +58,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useAppCreateStore } from '../../../stores/appCreateStore'
-
-const store = useAppCreateStore()
+import useAiDouCreateAppStore from '@stores/ai_dou_createApp'
+console.log('AppSourceSelectionModal')
+const createAppStore = useAiDouCreateAppStore()
 const selectedSource = ref('')
 
 // Define emits
@@ -78,18 +78,19 @@ function selectSource(source) {
 
 // Function to confirm selection
 async function confirmSelection() {
+  console.log('confirmSelection', selectedSource.value)
   if (!selectedSource.value) return
-
-  // Call the appropriate store function based on the selected source
-  if (selectedSource.value === 'folder') {
-    store.setAppDataFromFolder()
-  } else if (selectedSource.value === 'github') {
-    store.setAppDataFromGithub()
-  } else if (selectedSource.value === 'seed') {
-    // For seed we don't initialize with a specific seed yet
-    // The main modal will handle seed selection
-    store.setAppDataFromSeed()
-  }
+  createAppStore.createApp(selectedSource.value)
+  // // Call the appropriate store function based on the selected source
+  // if (selectedSource.value === 'folder') {
+  //   store.setAppDataFromFolder()
+  // } else if (selectedSource.value === 'github') {
+  //   store.setAppDataFromGithub()
+  // } else if (selectedSource.value === 'seed') {
+  //   // For seed we don't initialize with a specific seed yet
+  //   // The main modal will handle seed selection
+  //   store.setAppDataFromSeed()
+  // }
 
   // Emit selection event
   emit('select', selectedSource.value)
@@ -98,11 +99,11 @@ async function confirmSelection() {
 // Set default selection on mount
 onMounted(() => {
   // Set default selection or restore previous selection if available
-  if (store.appData.from) {
-    selectedSource.value = store.appData.from
-  } else {
-    selectedSource.value = 'seed' // Default to seed
-  }
+  // if (store.appData.from) {
+  //   selectedSource.value = store.appData.from
+  // } else {
+  //   selectedSource.value = 'seed' // Default to seed
+  // }
 })
 </script>
 

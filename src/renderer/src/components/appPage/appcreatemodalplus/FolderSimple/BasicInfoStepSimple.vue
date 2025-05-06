@@ -11,7 +11,12 @@
           </template>
         </Tips>
         <div class="folder-path-input">
-          <input type="text" v-model="folderPath" placeholder="应用文件夹路径" readonly />
+          <input
+            type="text"
+            v-model="store.creatingApp.folderPath"
+            placeholder="应用文件夹路径"
+            readonly
+          />
           <button class="browse-button" @click="browseFolder">浏览...</button>
         </div>
       </div>
@@ -20,9 +25,10 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
-import { useAppCreateStore } from '@stores/appCreateStore'
+import { ref } from 'vue'
+import useAppCreateStore from '@stores/ai_dou_createApp'
 import { Tips } from '@common'
+import { showOpenDialog } from '@electronAPI/window'
 
 const props = defineProps({
   isActive: {
@@ -34,98 +40,26 @@ const props = defineProps({
 // Use the Pinia store
 const store = useAppCreateStore()
 
-const emit = defineEmits(['browse-directory'])
-
 const stepRef = ref(null)
-const isAddingCustomTag = ref(false)
-const customTag = ref('')
-const customTagInput = ref(null)
-const showFolderModal = ref(false)
-const showGithubModal = ref(false)
-const showSeedModal = ref(false)
-const folderPath = computed(() => store.appData.folderPath || '')
-
-// Available tags
-const availableTags = [
-  '文本生成',
-  '图像生成',
-  '翻译',
-  '代码助手',
-  '聊天机器人',
-  '数据分析',
-  '知识库',
-  '音频处理',
-  '视频处理',
-  '自动化工具'
-]
-
-// Add functions to handle tag management
-function startAddCustomTag() {
-  isAddingCustomTag.value = true
-  nextTick(() => {
-    if (customTagInput.value) {
-      customTagInput.value.focus()
-    }
-  })
-}
-
-function addCustomTag() {
-  const tag = customTag.value.trim()
-  if (tag) {
-    store.addTag(tag)
-    customTag.value = ''
-  }
-}
-
-function finishAddTag() {
-  if (customTag.value.trim()) {
-    addCustomTag()
-  }
-  isAddingCustomTag.value = false
-}
-
-// Open source modal
-function openSourceModal(source) {
-  store.selectSource(source)
-
-  if (source === 'folder') {
-    showFolderModal.value = true
-  } else if (source === 'github') {
-    showGithubModal.value = true
-  } else if (source === 'seed') {
-    showSeedModal.value = true
-  }
-}
-
-function selectSource(source) {
-  store.selectSource(source)
-}
 
 // Handle folder directory browsing
 async function browseFolder() {
-  const result = await emit('browse-directory', 'folder')
-  return result
-}
-
-// Public method to set selected seed (used by parent)
-function setSelectedSeed(seed) {
-  store.selectedSeed = seed
+  // console.log('browseFolder from folderSimpleVue')
+  // const result = await emit('browse-directory', 'folder')
+  // return result
+  const result = await showOpenDialog({
+    properties: ['openDirectory']
+  })
+  if (!result.canceled) {
+    store.creatingApp.folderPath = result.filePaths[0]
+  }
+  // console.log('result', result)
 }
 
 // Expose functions and refs to parent component
 defineExpose({
-  stepRef,
-  setSelectedSeed
+  stepRef
 })
-
-function getGitSummary() {
-  const github = store.appData.github
-  if (github.repos && github.repos.length > 0) {
-    const defaultRepo = github.repos.find((repo) => repo.isDefault) || github.repos[0]
-    return defaultRepo.url
-  }
-  return github.repoUrl || '未设置仓库地址'
-}
 </script>
 
 <style scoped>

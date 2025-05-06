@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, nextTick, computed, onMounted } from 'vue'
-import { useAppCreateStore } from '@stores/appCreateStore'
+import useAppCreateStore from '@stores/ai_dou_createApp'
 import { Tips } from '@common'
 
 const props = defineProps({
