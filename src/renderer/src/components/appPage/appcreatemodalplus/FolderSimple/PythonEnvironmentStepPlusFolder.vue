@@ -474,7 +474,7 @@ defineExpose({
 <style scoped>
 .step-form {
   padding: 20px 0;
-  margin-bottom: 20px;
+  /* margin-bottom: 20px; */
   border-radius: 8px;
   transition: background-color 0.3s ease;
 }
